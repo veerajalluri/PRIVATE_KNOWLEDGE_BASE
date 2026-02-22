@@ -1,0 +1,902 @@
+[
+  {
+    "customer": "1",
+    "record_type": "customer_summary",
+    "order_count": 18101.0,
+    "net_sales": 419946.6817999889,
+    "gross_margin": 215254.51701999817,
+    "total_qty": 36392.0,
+    "gross_margin_pct": 51.26
+  },
+  {
+    "customer": "1852494",
+    "record_type": "customer_summary",
+    "order_count": 205.0,
+    "net_sales": 12300.0,
+    "gross_margin": 11248.350000000031,
+    "total_qty": 205.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1883377",
+    "record_type": "customer_summary",
+    "order_count": 52.0,
+    "net_sales": 5500.119999999998,
+    "gross_margin": 2997.1809999999973,
+    "total_qty": 422.0,
+    "gross_margin_pct": 54.49
+  },
+  {
+    "customer": "1851554",
+    "record_type": "customer_summary",
+    "order_count": 172.0,
+    "net_sales": 4036.9999999999986,
+    "gross_margin": -2877.310000000001,
+    "total_qty": 1276.0,
+    "gross_margin_pct": -71.27
+  },
+  {
+    "customer": "1884123",
+    "record_type": "customer_summary",
+    "order_count": 83.0,
+    "net_sales": 4034.71,
+    "gross_margin": 1539.9599999999996,
+    "total_qty": 820.0,
+    "gross_margin_pct": 38.17
+  },
+  {
+    "customer": "1890760",
+    "record_type": "customer_summary",
+    "order_count": 110.0,
+    "net_sales": 3888.5899999999983,
+    "gross_margin": 1567.8849999999998,
+    "total_qty": 751.0,
+    "gross_margin_pct": 40.32
+  },
+  {
+    "customer": "1230996",
+    "record_type": "customer_summary",
+    "order_count": 54.0,
+    "net_sales": 2853.2099999999996,
+    "gross_margin": 1408.91,
+    "total_qty": 318.0,
+    "gross_margin_pct": 49.38
+  },
+  {
+    "customer": "1178816",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 2729.68,
+    "gross_margin": 1994.04,
+    "total_qty": 33.0,
+    "gross_margin_pct": 73.05
+  },
+  {
+    "customer": "1167217",
+    "record_type": "customer_summary",
+    "order_count": 19.0,
+    "net_sales": 2465.05,
+    "gross_margin": 1158.766,
+    "total_qty": 315.0,
+    "gross_margin_pct": 47.01
+  },
+  {
+    "customer": "1827405",
+    "record_type": "customer_summary",
+    "order_count": 9.0,
+    "net_sales": 2211.25,
+    "gross_margin": 1406.2899999999997,
+    "total_qty": 53.0,
+    "gross_margin_pct": 63.6
+  },
+  {
+    "customer": "1837082",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 1883.4700000000003,
+    "gross_margin": 1050.2269999999999,
+    "total_qty": 77.0,
+    "gross_margin_pct": 55.76
+  },
+  {
+    "customer": "1727360",
+    "record_type": "customer_summary",
+    "order_count": 36.0,
+    "net_sales": 1756.8300000000002,
+    "gross_margin": 699.27,
+    "total_qty": 365.0,
+    "gross_margin_pct": 39.8
+  },
+  {
+    "customer": "1653671",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 1717.2200000000003,
+    "gross_margin": 896.9135,
+    "total_qty": 143.0,
+    "gross_margin_pct": 52.23
+  },
+  {
+    "customer": "1853438",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 1562.75,
+    "gross_margin": 1232.8,
+    "total_qty": 5.0,
+    "gross_margin_pct": 78.89
+  },
+  {
+    "customer": "1767085",
+    "record_type": "customer_summary",
+    "order_count": 27.0,
+    "net_sales": 1522.3400000000001,
+    "gross_margin": 1343.5749999999994,
+    "total_qty": 33.0,
+    "gross_margin_pct": 88.26
+  },
+  {
+    "customer": "1838473",
+    "record_type": "customer_summary",
+    "order_count": 8.0,
+    "net_sales": 1503.61,
+    "gross_margin": 868.9159999999999,
+    "total_qty": 79.0,
+    "gross_margin_pct": 57.79
+  },
+  {
+    "customer": "1825045",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 1492.0400000000002,
+    "gross_margin": 793.8499999999999,
+    "total_qty": 55.0,
+    "gross_margin_pct": 53.21
+  },
+  {
+    "customer": "1202040",
+    "record_type": "customer_summary",
+    "order_count": 27.0,
+    "net_sales": 1440.0200000000002,
+    "gross_margin": 562.9209999999999,
+    "total_qty": 238.0,
+    "gross_margin_pct": 39.09
+  },
+  {
+    "customer": "1836310",
+    "record_type": "customer_summary",
+    "order_count": 24.0,
+    "net_sales": 1406.46,
+    "gross_margin": 597.046,
+    "total_qty": 142.0,
+    "gross_margin_pct": 42.45
+  },
+  {
+    "customer": "1181507",
+    "record_type": "customer_summary",
+    "order_count": 67.0,
+    "net_sales": 1381.1600000000003,
+    "gross_margin": 523.1050000000001,
+    "total_qty": 175.0,
+    "gross_margin_pct": 37.87
+  },
+  {
+    "customer": "1796562",
+    "record_type": "customer_summary",
+    "order_count": 23.0,
+    "net_sales": 1380.0,
+    "gross_margin": 1262.0099999999995,
+    "total_qty": 23.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1201125",
+    "record_type": "customer_summary",
+    "order_count": 18.0,
+    "net_sales": 1373.8899999999999,
+    "gross_margin": 507.46999999999997,
+    "total_qty": 250.0,
+    "gross_margin_pct": 36.94
+  },
+  {
+    "customer": "1851530",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 1357.74,
+    "gross_margin": 1141.1,
+    "total_qty": 4.0,
+    "gross_margin_pct": 84.04
+  },
+  {
+    "customer": "1870066",
+    "record_type": "customer_summary",
+    "order_count": 8.0,
+    "net_sales": 1327.8500000000001,
+    "gross_margin": 705.5400000000001,
+    "total_qty": 49.0,
+    "gross_margin_pct": 53.13
+  },
+  {
+    "customer": "1868945",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 1323.5,
+    "gross_margin": 819.431,
+    "total_qty": 109.0,
+    "gross_margin_pct": 61.91
+  },
+  {
+    "customer": "1732115",
+    "record_type": "customer_summary",
+    "order_count": 12.0,
+    "net_sales": 1320.0,
+    "gross_margin": 1207.1399999999999,
+    "total_qty": 12.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1762979",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 1267.13,
+    "gross_margin": 560.19,
+    "total_qty": 53.0,
+    "gross_margin_pct": 44.21
+  },
+  {
+    "customer": "1200168",
+    "record_type": "customer_summary",
+    "order_count": 10.0,
+    "net_sales": 1265.25,
+    "gross_margin": 795.081,
+    "total_qty": 99.0,
+    "gross_margin_pct": 62.84
+  },
+  {
+    "customer": "1249635",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 1245.31,
+    "gross_margin": 601.6,
+    "total_qty": 118.0,
+    "gross_margin_pct": 48.31
+  },
+  {
+    "customer": "1710005",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 1238.6299999999999,
+    "gross_margin": 447.62,
+    "total_qty": 31.0,
+    "gross_margin_pct": 36.14
+  },
+  {
+    "customer": "1872925",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 1230.0,
+    "gross_margin": 1072.92,
+    "total_qty": 4.0,
+    "gross_margin_pct": 87.23
+  },
+  {
+    "customer": "1796200",
+    "record_type": "customer_summary",
+    "order_count": 16.0,
+    "net_sales": 1220.3400000000001,
+    "gross_margin": 572.51,
+    "total_qty": 132.0,
+    "gross_margin_pct": 46.91
+  },
+  {
+    "customer": "1843927",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 1209.29,
+    "gross_margin": 504.466,
+    "total_qty": 104.0,
+    "gross_margin_pct": 41.72
+  },
+  {
+    "customer": "1859184",
+    "record_type": "customer_summary",
+    "order_count": 26.0,
+    "net_sales": 1187.4900000000002,
+    "gross_margin": 516.415,
+    "total_qty": 161.0,
+    "gross_margin_pct": 43.49
+  },
+  {
+    "customer": "1798865",
+    "record_type": "customer_summary",
+    "order_count": 30.0,
+    "net_sales": 1148.5600000000002,
+    "gross_margin": 550.9224999999999,
+    "total_qty": 129.0,
+    "gross_margin_pct": 47.97
+  },
+  {
+    "customer": "1784411",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 1099.25,
+    "gross_margin": 644.71,
+    "total_qty": 3.0,
+    "gross_margin_pct": 58.65
+  },
+  {
+    "customer": "1892012",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 1095.27,
+    "gross_margin": 407.68,
+    "total_qty": 63.0,
+    "gross_margin_pct": 37.22
+  },
+  {
+    "customer": "1844053",
+    "record_type": "customer_summary",
+    "order_count": 16.0,
+    "net_sales": 1032.9,
+    "gross_margin": 568.195,
+    "total_qty": 87.0,
+    "gross_margin_pct": 55.01
+  },
+  {
+    "customer": "1514907",
+    "record_type": "customer_summary",
+    "order_count": 17.0,
+    "net_sales": 1014.82,
+    "gross_margin": 530.1819999999999,
+    "total_qty": 69.0,
+    "gross_margin_pct": 52.24
+  },
+  {
+    "customer": "1680673",
+    "record_type": "customer_summary",
+    "order_count": 10.0,
+    "net_sales": 1012.04,
+    "gross_margin": 570.5056000000001,
+    "total_qty": 31.0,
+    "gross_margin_pct": 56.37
+  },
+  {
+    "customer": "1877652",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 1000.0,
+    "gross_margin": 184.48,
+    "total_qty": 152.0,
+    "gross_margin_pct": 18.45
+  },
+  {
+    "customer": "1608180",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 983.74,
+    "gross_margin": 548.5649999999999,
+    "total_qty": 83.0,
+    "gross_margin_pct": 55.76
+  },
+  {
+    "customer": "1852045",
+    "record_type": "customer_summary",
+    "order_count": 16.0,
+    "net_sales": 960.0,
+    "gross_margin": 877.92,
+    "total_qty": 16.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1376965",
+    "record_type": "customer_summary",
+    "order_count": 23.0,
+    "net_sales": 925.4,
+    "gross_margin": 414.84000000000003,
+    "total_qty": 107.0,
+    "gross_margin_pct": 44.83
+  },
+  {
+    "customer": "1734727",
+    "record_type": "customer_summary",
+    "order_count": 13.0,
+    "net_sales": 913.1499999999999,
+    "gross_margin": 478.03000000000003,
+    "total_qty": 46.0,
+    "gross_margin_pct": 52.35
+  },
+  {
+    "customer": "1186841",
+    "record_type": "customer_summary",
+    "order_count": 12.0,
+    "net_sales": 904.7900000000001,
+    "gross_margin": 521.515,
+    "total_qty": 79.0,
+    "gross_margin_pct": 57.64
+  },
+  {
+    "customer": "1796563",
+    "record_type": "customer_summary",
+    "order_count": 15.0,
+    "net_sales": 900.0,
+    "gross_margin": 823.05,
+    "total_qty": 15.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1882341",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 889.55,
+    "gross_margin": 160.91,
+    "total_qty": 24.0,
+    "gross_margin_pct": 18.09
+  },
+  {
+    "customer": "1874601",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 879.32,
+    "gross_margin": 748.69,
+    "total_qty": 6.0,
+    "gross_margin_pct": 85.14
+  },
+  {
+    "customer": "1852218",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 875.0,
+    "gross_margin": 1050.0,
+    "total_qty": 2.0,
+    "gross_margin_pct": 120.0
+  },
+  {
+    "customer": "1801287",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 875.0,
+    "gross_margin": 834.9,
+    "total_qty": 2.0,
+    "gross_margin_pct": 95.42
+  },
+  {
+    "customer": "1854588",
+    "record_type": "customer_summary",
+    "order_count": 8.0,
+    "net_sales": 869.7600000000001,
+    "gross_margin": 463.84000000000003,
+    "total_qty": 32.0,
+    "gross_margin_pct": 53.33
+  },
+  {
+    "customer": "1699508",
+    "record_type": "customer_summary",
+    "order_count": 24.0,
+    "net_sales": 864.7700000000001,
+    "gross_margin": 339.66800000000006,
+    "total_qty": 72.0,
+    "gross_margin_pct": 39.28
+  },
+  {
+    "customer": "1748686",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 855.3400000000001,
+    "gross_margin": 436.505,
+    "total_qty": 56.0,
+    "gross_margin_pct": 51.03
+  },
+  {
+    "customer": "1851856",
+    "record_type": "customer_summary",
+    "order_count": 14.0,
+    "net_sales": 840.0,
+    "gross_margin": 768.18,
+    "total_qty": 14.0,
+    "gross_margin_pct": 91.45
+  },
+  {
+    "customer": "1459992",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 836.6400000000001,
+    "gross_margin": 364.13,
+    "total_qty": 104.0,
+    "gross_margin_pct": 43.52
+  },
+  {
+    "customer": "1474804",
+    "record_type": "customer_summary",
+    "order_count": 12.0,
+    "net_sales": 836.3899999999999,
+    "gross_margin": 378.51,
+    "total_qty": 95.0,
+    "gross_margin_pct": 45.26
+  },
+  {
+    "customer": "1786478",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 835.61,
+    "gross_margin": 434.47,
+    "total_qty": 73.0,
+    "gross_margin_pct": 51.99
+  },
+  {
+    "customer": "1854372",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 831.67,
+    "gross_margin": 351.92,
+    "total_qty": 2.0,
+    "gross_margin_pct": 42.31
+  },
+  {
+    "customer": "1828052",
+    "record_type": "customer_summary",
+    "order_count": 13.0,
+    "net_sales": 824.05,
+    "gross_margin": 389.05499999999995,
+    "total_qty": 93.0,
+    "gross_margin_pct": 47.21
+  },
+  {
+    "customer": "1833845",
+    "record_type": "customer_summary",
+    "order_count": 10.0,
+    "net_sales": 820.72,
+    "gross_margin": 432.053,
+    "total_qty": 51.0,
+    "gross_margin_pct": 52.64
+  },
+  {
+    "customer": "1893416",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 816.4499999999999,
+    "gross_margin": 347.83500000000004,
+    "total_qty": 53.0,
+    "gross_margin_pct": 42.6
+  },
+  {
+    "customer": "1849283",
+    "record_type": "customer_summary",
+    "order_count": 12.0,
+    "net_sales": 808.45,
+    "gross_margin": 426.07499999999993,
+    "total_qty": 44.0,
+    "gross_margin_pct": 52.7
+  },
+  {
+    "customer": "1180751",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 803.04,
+    "gross_margin": 347.58000000000004,
+    "total_qty": 34.0,
+    "gross_margin_pct": 43.28
+  },
+  {
+    "customer": "1825776",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 801.3600000000001,
+    "gross_margin": 429.128,
+    "total_qty": 64.0,
+    "gross_margin_pct": 53.55
+  },
+  {
+    "customer": "1228276",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 801.0,
+    "gross_margin": 615.56,
+    "total_qty": 14.0,
+    "gross_margin_pct": 76.85
+  },
+  {
+    "customer": "1382532",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 800.1699999999998,
+    "gross_margin": 277.77,
+    "total_qty": 120.0,
+    "gross_margin_pct": 34.71
+  },
+  {
+    "customer": "1171956",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 799.0299999999999,
+    "gross_margin": 446.22499999999997,
+    "total_qty": 90.0,
+    "gross_margin_pct": 55.85
+  },
+  {
+    "customer": "1809589",
+    "record_type": "customer_summary",
+    "order_count": 17.0,
+    "net_sales": 798.4100000000001,
+    "gross_margin": 339.53999999999996,
+    "total_qty": 55.0,
+    "gross_margin_pct": 42.53
+  },
+  {
+    "customer": "1504890",
+    "record_type": "customer_summary",
+    "order_count": 10.0,
+    "net_sales": 798.22,
+    "gross_margin": 370.1532499999999,
+    "total_qty": 74.0,
+    "gross_margin_pct": 46.37
+  },
+  {
+    "customer": "1812520",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 797.19,
+    "gross_margin": 348.251,
+    "total_qty": 109.0,
+    "gross_margin_pct": 43.68
+  },
+  {
+    "customer": "1200673",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 795.88,
+    "gross_margin": 545.6679999999999,
+    "total_qty": 19.0,
+    "gross_margin_pct": 68.56
+  },
+  {
+    "customer": "1665189",
+    "record_type": "customer_summary",
+    "order_count": 18.0,
+    "net_sales": 795.08,
+    "gross_margin": 524.475,
+    "total_qty": 48.0,
+    "gross_margin_pct": 65.97
+  },
+  {
+    "customer": "1211810",
+    "record_type": "customer_summary",
+    "order_count": 9.0,
+    "net_sales": 794.42,
+    "gross_margin": 353.82,
+    "total_qty": 91.0,
+    "gross_margin_pct": 44.54
+  },
+  {
+    "customer": "1621217",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 791.33,
+    "gross_margin": 539.3539999999999,
+    "total_qty": 43.0,
+    "gross_margin_pct": 68.16
+  },
+  {
+    "customer": "1393327",
+    "record_type": "customer_summary",
+    "order_count": 14.0,
+    "net_sales": 788.46,
+    "gross_margin": 376.05500000000006,
+    "total_qty": 82.0,
+    "gross_margin_pct": 47.69
+  },
+  {
+    "customer": "1666394",
+    "record_type": "customer_summary",
+    "order_count": 3.0,
+    "net_sales": 780.87,
+    "gross_margin": 130.20999999999998,
+    "total_qty": 33.0,
+    "gross_margin_pct": 16.67
+  },
+  {
+    "customer": "1433761",
+    "record_type": "customer_summary",
+    "order_count": 10.0,
+    "net_sales": 770.0600000000001,
+    "gross_margin": 422.17999999999995,
+    "total_qty": 43.0,
+    "gross_margin_pct": 54.82
+  },
+  {
+    "customer": "1870696",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 766.44,
+    "gross_margin": 314.053,
+    "total_qty": 19.0,
+    "gross_margin_pct": 40.98
+  },
+  {
+    "customer": "1645519",
+    "record_type": "customer_summary",
+    "order_count": 14.0,
+    "net_sales": 764.0700000000002,
+    "gross_margin": 233.07049999999998,
+    "total_qty": 173.0,
+    "gross_margin_pct": 30.5
+  },
+  {
+    "customer": "1161906",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 762.4099999999999,
+    "gross_margin": 453.675,
+    "total_qty": 82.0,
+    "gross_margin_pct": 59.51
+  },
+  {
+    "customer": "1638871",
+    "record_type": "customer_summary",
+    "order_count": 13.0,
+    "net_sales": 756.2,
+    "gross_margin": 388.72499999999997,
+    "total_qty": 66.0,
+    "gross_margin_pct": 51.41
+  },
+  {
+    "customer": "1688285",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 752.52,
+    "gross_margin": 280.19,
+    "total_qty": 133.0,
+    "gross_margin_pct": 37.23
+  },
+  {
+    "customer": "1185480",
+    "record_type": "customer_summary",
+    "order_count": 14.0,
+    "net_sales": 744.9100000000001,
+    "gross_margin": 395.9800000000001,
+    "total_qty": 55.0,
+    "gross_margin_pct": 53.16
+  },
+  {
+    "customer": "1198378",
+    "record_type": "customer_summary",
+    "order_count": 12.0,
+    "net_sales": 736.2900000000001,
+    "gross_margin": 330.479,
+    "total_qty": 86.0,
+    "gross_margin_pct": 44.88
+  },
+  {
+    "customer": "1747980",
+    "record_type": "customer_summary",
+    "order_count": 22.0,
+    "net_sales": 733.17,
+    "gross_margin": 299.68,
+    "total_qty": 119.0,
+    "gross_margin_pct": 40.87
+  },
+  {
+    "customer": "1682070",
+    "record_type": "customer_summary",
+    "order_count": 5.0,
+    "net_sales": 732.23,
+    "gross_margin": 327.77,
+    "total_qty": 27.0,
+    "gross_margin_pct": 44.76
+  },
+  {
+    "customer": "1252133",
+    "record_type": "customer_summary",
+    "order_count": 2.0,
+    "net_sales": 725.73,
+    "gross_margin": 440.06725,
+    "total_qty": 89.0,
+    "gross_margin_pct": 60.64
+  },
+  {
+    "customer": "1689772",
+    "record_type": "customer_summary",
+    "order_count": 11.0,
+    "net_sales": 725.3400000000001,
+    "gross_margin": 322.08975,
+    "total_qty": 76.0,
+    "gross_margin_pct": 44.41
+  },
+  {
+    "customer": "1839904",
+    "record_type": "customer_summary",
+    "order_count": 18.0,
+    "net_sales": 721.9799999999999,
+    "gross_margin": 198.389,
+    "total_qty": 165.0,
+    "gross_margin_pct": 27.48
+  },
+  {
+    "customer": "1667917",
+    "record_type": "customer_summary",
+    "order_count": 8.0,
+    "net_sales": 718.06,
+    "gross_margin": 380.715,
+    "total_qty": 57.0,
+    "gross_margin_pct": 53.02
+  },
+  {
+    "customer": "1208827",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 709.57,
+    "gross_margin": 440.5755,
+    "total_qty": 68.0,
+    "gross_margin_pct": 62.09
+  },
+  {
+    "customer": "1279906",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 707.5,
+    "gross_margin": 295.87,
+    "total_qty": 1.0,
+    "gross_margin_pct": 41.82
+  },
+  {
+    "customer": "1733748",
+    "record_type": "customer_summary",
+    "order_count": 6.0,
+    "net_sales": 707.4300000000001,
+    "gross_margin": 348.674,
+    "total_qty": 70.0,
+    "gross_margin_pct": 49.29
+  },
+  {
+    "customer": "1869276",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 706.67,
+    "gross_margin": 341.68,
+    "total_qty": 4.0,
+    "gross_margin_pct": 48.35
+  },
+  {
+    "customer": "1862068",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 706.67,
+    "gross_margin": 341.68,
+    "total_qty": 4.0,
+    "gross_margin_pct": 48.35
+  },
+  {
+    "customer": "1873008",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 706.67,
+    "gross_margin": 341.68,
+    "total_qty": 4.0,
+    "gross_margin_pct": 48.35
+  },
+  {
+    "customer": "1862466",
+    "record_type": "customer_summary",
+    "order_count": 7.0,
+    "net_sales": 704.9399999999999,
+    "gross_margin": 406.09000000000003,
+    "total_qty": 56.0,
+    "gross_margin_pct": 57.61
+  },
+  {
+    "customer": "1595617",
+    "record_type": "customer_summary",
+    "order_count": 20.0,
+    "net_sales": 703.26,
+    "gross_margin": 255.35500000000005,
+    "total_qty": 65.0,
+    "gross_margin_pct": 36.31
+  },
+  {
+    "customer": "1707935",
+    "record_type": "customer_summary",
+    "order_count": 1.0,
+    "net_sales": 701.48,
+    "gross_margin": 265.225,
+    "total_qty": 183.0,
+    "gross_margin_pct": 37.81
+  }
+]

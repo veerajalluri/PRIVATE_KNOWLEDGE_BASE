@@ -29,3 +29,7 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# upload
+HeaderResults.json
+LinesResults.json

@@ -1,4 +1,167 @@
-# PrivateGPT 
+# conv-bi — Conversational BI on Zylon/PrivateGPT
+
+> A cost-free, fully local conversational Business Intelligence layer built on top of PrivateGPT/Zylon.
+> Drop JSON exports from your data warehouse, ask questions in plain English, get answers grounded in your actual numbers.
+
+---
+
+## Problems encountered & how they were solved
+
+### Problem 1 — JSON ingestion produced one blob per file
+
+**What happened:** Zylon's built-in `JSONReader` (from LlamaIndex) reads a JSON file and dumps the entire
+contents as a single text document. For a BI export that is an array of records, this means all 165,919
+order rows land in one document — too large to embed, too coarse to retrieve usefully.
+
+**Solution:** Replaced `JSONReader` with a custom `BIJsonReader`
+([`private_gpt/components/ingest/bi_json_reader.py`](private_gpt/components/ingest/bi_json_reader.py))
+that produces **one Document per JSON record**, with nested objects flattened to `key: value` text.
+The swap is a single-line change in
+[`private_gpt/components/ingest/ingest_helper.py`](private_gpt/components/ingest/ingest_helper.py).
+
+---
+
+### Problem 2 — 678K raw records cannot be embedded on CPU
+
+**What happened:** The two input files (`HeaderResults.json` 138 MB / 165K orders,
+`LinesResults.json` 324 MB / 512K line items) produce ~678K documents if embedded record-by-record.
+On a CPU-only Ollama setup this would take hours or days, and the resulting vector store would be
+~10 GB. More fundamentally, RAG with `top_k=10` over 678K records sees 0.001% of the data —
+so any aggregation query ("total revenue", "best margin channel") returns a fabricated answer
+based on 10 arbitrary rows.
+
+**Solution:** A pre-aggregation step
+([`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py)) runs **before** ingestion and
+uses only the Python standard library to reduce 678K records to **389 summary documents** across 8 files:
+
+| Aggregated file | Records | Answers |
+|----------------|---------|---------|
+| `header_overall_summary.json` | 1 | Total revenue, orders, date range |
+| `header_by_channel.json` | 11 | Revenue / margin by sales channel |
+| `header_by_month.json` | 13 | Month-over-month trends |
+| `header_top_customers.json` | 100 | Top customers by net sales |
+| `header_by_discount.json` | 50 | Discount code usage |
+| `lines_overall_summary.json` | 1 | Total cost breakdown |
+| `lines_by_sku.json` | 200 | Top 200 products by revenue & margin |
+| `lines_by_month.json` | 13 | Monthly line-item trends |
+
+The script runs in ~6 seconds. The 389 summary records embed in minutes on CPU, not days.
+`BIJsonReader` also guards against accidental direct ingestion of raw files with a 5,000-record
+warning and hard truncation.
+
+---
+
+### Problem 3 — RAG top_k too low for multi-record BI queries
+
+**What happened:** The default `similarity_top_k: 2` means the LLM only sees 2 retrieved
+chunks per query. For BI questions that need to reason across multiple channels, months or
+products this is insufficient.
+
+**Solution:** `settings-bi.yaml` sets `similarity_top_k: 10` so the LLM sees up to 10
+summary records per query. With only 389 total documents, 10 of those cover a meaningful
+slice of the data for any well-formed BI question.
+
+---
+
+### Problem 4 — Docker stack was over-engineered for local BI
+
+**What happened:** The upstream `docker-compose.yaml` runs three services for the Ollama mode:
+a Traefik reverse proxy, an Ollama container, and the PrivateGPT container. Traefik adds
+complexity and memory overhead that is unnecessary for a single-host local deployment.
+
+**Solution:** [`docker-compose.bi.yaml`](docker-compose.bi.yaml) is a lean 2-service file
+(Ollama + conv-bi app) with no proxy layer and a three-stage entrypoint:
+
+```
+prepare_bi_data.py  →  ingest_bi_json.py  →  python -m private_gpt
+```
+
+Qdrant runs embedded inside the app container (no third container needed).
+
+---
+
+## Quick start
+
+### Docker (recommended)
+
+```bash
+# 1. Copy your JSON exports
+cp HeaderResults.json LinesResults.json data/uploads/
+
+# 2. Start the stack — aggregates data, embeds summaries, then serves the UI
+#    (downloads Mistral 7B + nomic-embed-text on first run, ~4 GB)
+make docker-up
+
+# 3. Open http://localhost:8001 and ask questions
+```
+
+### Local (no Docker)
+
+Requires [Ollama](https://ollama.ai) installed and running.
+
+```bash
+ollama pull mistral && ollama pull nomic-embed-text
+
+cp HeaderResults.json LinesResults.json data/uploads/
+
+make bi    # aggregate raw JSON → embed summaries into Qdrant
+make run   # start the app at http://localhost:8001
+```
+
+On subsequent data refreshes, just re-run `make bi && make run`.
+
+### Example questions
+
+- *"What is the total net sales across all channels?"*
+- *"Which sales channel has the highest gross margin percentage?"*
+- *"Show me the top 5 products by revenue."*
+- *"How did monthly revenue trend month over month?"*
+- *"Which discount codes drive the most orders?"*
+
+## Makefile reference
+
+```
+make bi            Aggregate raw JSON + embed summaries (full data pipeline)
+make prepare       Aggregate raw JSON in data/uploads/ → data/aggregated/
+make ingest        Embed aggregated summaries into Qdrant
+make run           Start the app (local profile)
+make dev           Start with auto-reload for development
+
+make docker-up     Start the full Docker stack (Ollama + conv-bi)
+make docker-down   Stop the stack
+make docker-logs   Tail container logs
+
+make test          Run the test suite
+make format        Format code with black and ruff
+make wipe          Clear the vector store and docstore
+make list          Print all available targets
+```
+
+## Cost
+
+| Component | Cost |
+|-----------|------|
+| Ollama — Mistral 7B Q4 (LLM) | $0 — CPU inference |
+| Ollama — nomic-embed-text (embeddings) | $0 — CPU inference |
+| Qdrant (vector store) | $0 — embedded, file-based |
+| Cloud API calls | $0 — none |
+
+## Files added / changed
+
+| File | Purpose |
+|------|---------|
+| [`private_gpt/components/ingest/bi_json_reader.py`](private_gpt/components/ingest/bi_json_reader.py) | One Document per JSON record |
+| [`private_gpt/components/ingest/ingest_helper.py`](private_gpt/components/ingest/ingest_helper.py) | Routes `.json` to BIJsonReader |
+| [`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py) | Aggregates raw JSON into summary docs |
+| [`scripts/ingest_bi_json.py`](scripts/ingest_bi_json.py) | Ingests aggregated summaries into Qdrant |
+| [`settings-bi.yaml`](settings-bi.yaml) | BI-tuned config (top_k, system prompt, Mistral) |
+| [`settings-local.yaml`](settings-local.yaml) | Local dev config mirroring settings-bi.yaml |
+| [`docker-compose.bi.yaml`](docker-compose.bi.yaml) | Lean 2-service Docker stack |
+| [`Makefile`](Makefile) | Developer workflow targets |
+
+---
+
+# PrivateGPT (upstream)
 
 <a href="https://trendshift.io/repositories/2601" target="_blank"><img src="https://trendshift.io/api/badge/repositories/2601" alt="imartinez%2FprivateGPT | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
@@ -158,3 +321,10 @@ This project has been strongly influenced and supported by other amazing project
 [LlamaCpp](https://github.com/ggerganov/llama.cpp),
 [Chroma](https://www.trychroma.com/)
 and [SentenceTransformers](https://www.sbert.net/).
+
+
+<!-- to run  -->
+
+docker compose -f docker-compose.bi.yaml up
+
+Then open http://localhost:8001 and ask: "What is the total net sales by channel?" or "Which product has the highest margin?"

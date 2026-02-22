@@ -1,0 +1,145 @@
+[
+  {
+    "month": "2025-02",
+    "record_type": "lines_monthly_summary",
+    "line_count": 25937.0,
+    "net_sales": 234187.43999998557,
+    "total_cost": 145396.79149999883,
+    "discount": 9270.139999999836,
+    "commission": 3158.164425,
+    "gross_margin": 88790.64849998674,
+    "gross_margin_pct": 37.91
+  },
+  {
+    "month": "2025-03",
+    "record_type": "lines_monthly_summary",
+    "line_count": 80779.0,
+    "net_sales": 907998.4429996278,
+    "total_cost": 546748.8421599894,
+    "discount": 29365.162000001976,
+    "commission": 16069.170449999958,
+    "gross_margin": 361249.6008396384,
+    "gross_margin_pct": 39.79
+  },
+  {
+    "month": "2025-04",
+    "record_type": "lines_monthly_summary",
+    "line_count": 65434.0,
+    "net_sales": 736712.8447996987,
+    "total_cost": 498058.34802997706,
+    "discount": 26085.83510000088,
+    "commission": 13212.554024999958,
+    "gross_margin": 238654.49676972162,
+    "gross_margin_pct": 32.39
+  },
+  {
+    "month": "2025-05",
+    "record_type": "lines_monthly_summary",
+    "line_count": 39221.0,
+    "net_sales": 478920.80489989935,
+    "total_cost": 303250.3254999859,
+    "discount": 30781.640000001265,
+    "commission": 7985.428649999987,
+    "gross_margin": 175670.47939991346,
+    "gross_margin_pct": 36.68
+  },
+  {
+    "month": "2025-06",
+    "record_type": "lines_monthly_summary",
+    "line_count": 22786.0,
+    "net_sales": 288277.69999999116,
+    "total_cost": 200583.70934999586,
+    "discount": 16582.374999999585,
+    "commission": 4189.576949999999,
+    "gross_margin": 87693.9906499953,
+    "gross_margin_pct": 30.42
+  },
+  {
+    "month": "2025-07",
+    "record_type": "lines_monthly_summary",
+    "line_count": 18842.0,
+    "net_sales": 223753.8749999996,
+    "total_cost": 166233.24974999492,
+    "discount": 12338.123299999665,
+    "commission": 2975.31224999999,
+    "gross_margin": 57520.62525000467,
+    "gross_margin_pct": 25.71
+  },
+  {
+    "month": "2025-08",
+    "record_type": "lines_monthly_summary",
+    "line_count": 21070.0,
+    "net_sales": 245096.17789999404,
+    "total_cost": 163222.60394999562,
+    "discount": 16828.38039999975,
+    "commission": 1174.9845749999993,
+    "gross_margin": 81873.57394999842,
+    "gross_margin_pct": 33.4
+  },
+  {
+    "month": "2025-09",
+    "record_type": "lines_monthly_summary",
+    "line_count": 28782.0,
+    "net_sales": 321068.41339994984,
+    "total_cost": 211326.1692499929,
+    "discount": 25235.066600001002,
+    "commission": 1694.8507499999976,
+    "gross_margin": 109742.24414995694,
+    "gross_margin_pct": 34.18
+  },
+  {
+    "month": "2025-10",
+    "record_type": "lines_monthly_summary",
+    "line_count": 25054.0,
+    "net_sales": 282742.0145999829,
+    "total_cost": 196209.66079999614,
+    "discount": 20404.708800000302,
+    "commission": 3446.714775,
+    "gross_margin": 86532.35379998674,
+    "gross_margin_pct": 30.6
+  },
+  {
+    "month": "2025-11",
+    "record_type": "lines_monthly_summary",
+    "line_count": 24949.0,
+    "net_sales": 228550.22359998326,
+    "total_cost": 180680.0986999975,
+    "discount": 39173.42640000073,
+    "commission": 4131.5735250000025,
+    "gross_margin": 47870.12489998576,
+    "gross_margin_pct": 20.95
+  },
+  {
+    "month": "2025-12",
+    "record_type": "lines_monthly_summary",
+    "line_count": 23187.0,
+    "net_sales": 211898.3131999964,
+    "total_cost": 154476.8884999967,
+    "discount": 10039.259999999842,
+    "commission": 3875.475000000011,
+    "gross_margin": 57421.42469999968,
+    "gross_margin_pct": 27.1
+  },
+  {
+    "month": "2026-01",
+    "record_type": "lines_monthly_summary",
+    "line_count": 86132.0,
+    "net_sales": 548571.541399581,
+    "total_cost": 365797.8914999671,
+    "discount": 22914.31710000099,
+    "commission": 3522.527625000006,
+    "gross_margin": 182773.64989961393,
+    "gross_margin_pct": 33.32
+  },
+  {
+    "month": "2026-02",
+    "record_type": "lines_monthly_summary",
+    "line_count": 49912.0,
+    "net_sales": 381908.5982998953,
+    "total_cost": 250829.52999998222,
+    "discount": 24573.660000000105,
+    "commission": 785.6108249999994,
+    "gross_margin": 131079.06829991308,
+    "gross_margin_pct": 34.32
+  }
+]

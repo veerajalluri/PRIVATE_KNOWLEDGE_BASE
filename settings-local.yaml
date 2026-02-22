@@ -1,27 +1,45 @@
-# poetry install --extras "ui llms-llama-cpp vector-stores-qdrant embeddings-huggingface"
 server:
-  env_name: ${APP_ENV:local}
+  env_name: local
 
 llm:
-  mode: llamacpp
-  # Should be matching the selected model
-  max_new_tokens: 512
-  context_window: 3900
-  tokenizer: meta-llama/Meta-Llama-3.1-8B-Instruct
-  prompt_style: "llama3"
-
-llamacpp:
-  llm_hf_repo_id: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
-  llm_hf_model_file: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+  mode: ollama          # Local LLM, zero API cost
+  max_new_tokens: 1024  # BI answers can be long
+  context_window: 8192  # Mistral supports 8k context
+  temperature: 0.05     # Low = factual, deterministic
+  prompt_style: mistral
 
 embedding:
-  mode: huggingface
-
-huggingface:
-  embedding_hf_model_name: nomic-ai/nomic-embed-text-v1.5
+  mode: ollama
+  ingest_mode: simple
+  model: nomic-embed-text  # Fast, free, good for structured data
 
 vectorstore:
-  database: qdrant
+  database: qdrant       # Built into Zylon, no separate service needed
 
-qdrant:
-  path: local_data/private_gpt/qdrant
+rag:
+  similarity_top_k: 10   # Retrieve more records for aggregation queries
+
+data:
+  local_data_folder: local_data/private_gpt
+  local_ingestion:
+    enabled: true
+    allow_ingest_from: ["*"]
+
+ui:
+  enabled: true          # Zylon ships with a basic chat UI
+  default_mode: "RAG"
+  default_query_system_prompt: >
+    You are a business intelligence analyst. The context below contains
+    structured business records retrieved from the data store.
+    Answer the user's question using only the information in the context.
+    For numeric questions, compute totals, averages, or counts from the
+    records shown. Always mention how many records support your answer.
+    If the answer cannot be derived from the context, say so clearly —
+    do not guess or fabricate figures.
+
+ollama:
+  llm_model: mistral
+  embedding_model: nomic-embed-text
+  api_base: http://localhost:11434
+  embedding_api_base: http://localhost:11434
+  autopull_models: true

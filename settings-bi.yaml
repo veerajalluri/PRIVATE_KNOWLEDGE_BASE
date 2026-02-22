@@ -1,0 +1,60 @@
+# Conversational BI configuration — layered on top of settings.yaml
+# Activate with: PGPT_PROFILES=bi
+#
+# Cost: $0/month — all models run locally via Ollama, no cloud API calls.
+
+server:
+  env_name: bi
+
+llm:
+  mode: ollama
+  max_new_tokens: 1024    # BI answers often include tables / multi-line lists
+  context_window: 8192    # Mistral supports 8k; lets us fit more records
+  temperature: 0.05       # Low temperature = factual, deterministic answers
+  prompt_style: mistral
+
+embedding:
+  mode: ollama
+  ingest_mode: simple     # JSON records are small; simple is fast enough
+
+vectorstore:
+  database: qdrant        # Embedded Qdrant — no extra container
+
+rag:
+  similarity_top_k: 10    # Retrieve up to 10 records per query so aggregations
+                          # (sum, average, count) have enough context to work with
+  rerank:
+    enabled: false        # Keep disabled to avoid extra memory usage on CPU
+
+ui:
+  enabled: true
+  default_mode: "RAG"
+  default_chat_system_prompt: >
+    You are a helpful business intelligence assistant.
+    Answer questions clearly and concisely based on the data available.
+  default_query_system_prompt: >
+    You are a business intelligence analyst. The context below contains
+    structured business records retrieved from the data store.
+    Answer the user's question using only the information in the context.
+    For numeric questions, compute totals, averages, or counts from the
+    records shown. Always mention how many records support your answer.
+    If the answer cannot be derived from the context, say so clearly —
+    do not guess or fabricate figures.
+  default_summarization_system_prompt: >
+    Summarise the key metrics and trends from the provided business data.
+    Highlight the most important figures and any notable patterns.
+
+data:
+  local_data_folder: local_data/private_gpt
+  local_ingestion:
+    enabled: true
+    allow_ingest_from: ["*"]
+
+ollama:
+  llm_model: mistral
+  embedding_model: nomic-embed-text
+  api_base: http://ollama:11434          # docker service name inside compose network
+  embedding_api_base: http://ollama:11434
+  keep_alive: 5m
+  request_timeout: 120.0
+  autopull_models: true                  # pull models automatically on first run

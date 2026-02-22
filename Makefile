@@ -33,26 +33,47 @@ check:
 ########################################################################################################################
 
 run:
-	poetry run python -m private_gpt
-
-dev-windows:
-	(set PGPT_PROFILES=local & poetry run python -m uvicorn private_gpt.main:app --reload --port 8001)
+	PGPT_PROFILES=local poetry run python -m private_gpt
 
 dev:
-	PYTHONUNBUFFERED=1 PGPT_PROFILES=local poetry run python -m uvicorn private_gpt.main:app --reload --port 8001
+	PYTHONPATH=. PYTHONUNBUFFERED=1 PGPT_PROFILES=local poetry run python -m uvicorn private_gpt.main:app --reload --port 8001
+
+########################################################################################################################
+# BI data pipeline
+########################################################################################################################
+
+prepare:
+	poetry run python scripts/prepare_bi_data.py data/uploads data/aggregated
+
+ingest:
+	PGPT_PROFILES=local poetry run python scripts/ingest_bi_json.py data/aggregated
+
+bi: prepare ingest
+	@echo "Data pipeline complete. Run 'make run' to start the app."
+
+########################################################################################################################
+# Docker
+########################################################################################################################
+
+docker-build:
+	docker compose -f docker-compose.bi.yaml build
+
+docker-up: _dirs
+	docker compose -f docker-compose.bi.yaml up
+
+# Ensure host-side mount points exist before Docker creates them as root-owned dirs
+_dirs:
+	@mkdir -p data/uploads data/aggregated local_data models
+
+docker-down:
+	docker compose -f docker-compose.bi.yaml down
+
+docker-logs:
+	docker compose -f docker-compose.bi.yaml logs -f
 
 ########################################################################################################################
 # Misc
 ########################################################################################################################
-
-api-docs:
-	PGPT_PROFILES=mock poetry run python scripts/extract_openapi.py private_gpt.main:app --out fern/openapi/openapi.json
-
-ingest:
-	@poetry run python scripts/ingest_folder.py $(call args)
-
-stats:
-	poetry run python scripts/utils.py stats
 
 wipe:
 	poetry run python scripts/utils.py wipe
@@ -61,18 +82,28 @@ setup:
 	poetry run python scripts/setup
 
 list:
-	@echo "Available commands:"
-	@echo "  test            : Run tests using pytest"
-	@echo "  test-coverage   : Run tests with coverage report"
-	@echo "  black           : Check code format with black"
-	@echo "  ruff            : Check code with ruff"
-	@echo "  format          : Format code with black and ruff"
-	@echo "  mypy            : Run mypy for type checking"
-	@echo "  check           : Run format and mypy commands"
-	@echo "  run             : Run the application"
-	@echo "  dev-windows     : Run the application in development mode on Windows"
-	@echo "  dev             : Run the application in development mode"
-	@echo "  api-docs        : Generate API documentation"
-	@echo "  ingest          : Ingest data using specified script"
-	@echo "  wipe            : Wipe data using specified script"
-	@echo "  setup           : Setup the application"
+	@echo "Quality checks:"
+	@echo "  test            Run tests with pytest"
+	@echo "  test-coverage   Run tests with coverage report"
+	@echo "  format          Format code with black and ruff"
+	@echo "  mypy            Type-check with mypy"
+	@echo "  check           Format + mypy"
+	@echo ""
+	@echo "Run:"
+	@echo "  run             Start the app (local profile)"
+	@echo "  dev             Start with auto-reload for development"
+	@echo ""
+	@echo "BI data pipeline:"
+	@echo "  prepare         Aggregate raw JSON in data/uploads/ → data/aggregated/"
+	@echo "  ingest          Embed aggregated summaries into Qdrant"
+	@echo "  bi              prepare + ingest (full pipeline)"
+	@echo ""
+	@echo "Docker:"
+	@echo "  docker-build    Build the conv-bi Docker image"
+	@echo "  docker-up       Start the full stack (Ollama + conv-bi)"
+	@echo "  docker-down     Stop the stack"
+	@echo "  docker-logs     Tail container logs"
+	@echo ""
+	@echo "Misc:"
+	@echo "  wipe            Wipe the vector store and docstore"
+	@echo "  setup           Download models (llamacpp mode only)"
