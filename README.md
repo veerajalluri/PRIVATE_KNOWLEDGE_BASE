@@ -127,6 +127,7 @@ make ingest        Embed aggregated summaries into Qdrant
 make run           Start the app (local profile)
 make dev           Start with auto-reload for development
 
+make docker-build  Rebuild docker image
 make docker-up     Start the full Docker stack (Ollama + conv-bi)
 make docker-down   Stop the stack
 make docker-logs   Tail container logs
@@ -328,3 +329,16 @@ and [SentenceTransformers](https://www.sbert.net/).
 docker compose -f docker-compose.bi.yaml up
 
 Then open http://localhost:8001 and ask: "What is the total net sales by channel?" or "Which product has the highest margin?"
+
+
+scripts/prepare_bi_data.py — ran in 6 seconds, produced 8 files / 389 records:
+
+Aggregated file	Records	Answers questions like
+header_overall_summary.json	1	Total revenue, total orders, date range
+header_by_channel.json	11	Which channel has best margin?
+header_by_month.json	13	Month-over-month trend?
+header_top_customers.json	100	Top customers by sales?
+header_by_discount.json	50	Which discount codes are used most?
+lines_overall_summary.json	1	Total cost breakdown
+lines_by_sku.json	200	Top products by revenue/margin?
+lines_by_month.json	13	Monthly line-item trends

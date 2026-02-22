@@ -1,18 +1,18 @@
 [
   {
     "record_type": "overall_lines_summary",
-    "total_lines": 512085,
-    "total_net_sales": 5089686.390134005,
-    "total_cost": 3382814.1089915726,
-    "total_material_cost": 1529753.4201381537,
-    "total_packaging_cost": 239215.2603339364,
-    "total_labour_cost": 529107.9100021027,
-    "total_distribution_cost": 1463468.8199978238,
-    "total_wastage_cost": 175942.9697497699,
-    "total_discount": 283592.09469997464,
-    "total_commission": 66221.94382500109,
-    "gross_margin": 1706872.2811424322,
-    "gross_margin_pct": 33.54,
-    "unique_skus": 6152
+    "total_lines": 89,
+    "total_net_sales": 668.3900000000003,
+    "total_cost": 408.2615000000001,
+    "total_material_cost": 150.92799999999997,
+    "total_packaging_cost": 31.414330000000003,
+    "total_labour_cost": 90.40000000000005,
+    "total_distribution_cost": 243.17999999999995,
+    "total_wastage_cost": 19.729999999999993,
+    "total_discount": 38.830000000000005,
+    "total_commission": 4.819274999999999,
+    "gross_margin": 260.1285000000002,
+    "gross_margin_pct": 38.92,
+    "unique_skus": 85
   }
 ]

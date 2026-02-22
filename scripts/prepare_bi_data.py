@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Pre-aggregate raw BI JSON files into compact summary documents for RAG.
 
-Why: 678K raw records cannot be embedded individually on CPU (it would take
-hours and RAG top-k=10 would only see 0.001% of data for aggregation queries).
-
-This script reads the raw HeaderResults.json and LinesResults.json, computes
-meaningful aggregations, and writes ~200 small JSON files to data/aggregated/.
-The ingest_bi_json.py script then embeds those summaries — not the raw data.
+Randomly samples N orders (OriginalReference) from HeaderResults.json,
+pulls the matching line items from LinesResults.json, then computes
+aggregations over that sample. This keeps the vector store small and
+embedding fast while remaining representative.
 
 Usage:
-    python scripts/prepare_bi_data.py [raw_folder] [out_folder]
+    python scripts/prepare_bi_data.py [raw_folder] [out_folder] [sample_size]
 
-    raw_folder  default: data/uploads
-    out_folder  default: data/aggregated
+    raw_folder   default: data/uploads
+    out_folder   default: data/aggregated
+    sample_size  default: 25
 """
 import json
 import logging
+import random
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -28,11 +28,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _f(val, default: float = 0.0) -> float:
-    """Safe float cast."""
     try:
         return float(val) if val is not None else default
     except (ValueError, TypeError):
@@ -40,7 +38,6 @@ def _f(val, default: float = 0.0) -> float:
 
 
 def _month(date_str: str) -> str:
-    """Extract YYYY-MM from an ISO date string; return 'unknown' on failure."""
     try:
         return datetime.fromisoformat(date_str).strftime("%Y-%m")
     except Exception:
@@ -56,15 +53,50 @@ def _save(data: list | dict, path: Path) -> None:
     logger.info("  Wrote %s (%d records)", path.name, len(data) if isinstance(data, list) else 1)
 
 
+# ── sampling ──────────────────────────────────────────────────────────────────
+
+def sample_references(all_headers: list[dict], n: int) -> set[str]:
+    """Pick n unique OriginalReference values at random."""
+    refs = [str(r["OriginalReference"]) for r in all_headers if r.get("OriginalReference")]
+    unique = list(dict.fromkeys(refs))   # deduplicate, preserve order
+    k = min(n, len(unique))
+    chosen = set(random.sample(unique, k))
+    logger.info("Sampled %d / %d unique OriginalReferences.", k, len(unique))
+    return chosen
+
+
 # ── HeaderResults aggregations ────────────────────────────────────────────────
 
-def aggregate_headers(records: list[dict], out: Path) -> None:
-    logger.info("Aggregating %d order headers …", len(records))
+def aggregate_headers(records: list[dict], refs: set[str], out: Path) -> None:
+    logger.info("Aggregating %d sampled order headers …", len(records))
+
+    # 0. Raw order records (one doc per order — for order-level lookup)
+    raw_rows = []
+    for r in records:
+        raw_rows.append({
+            "record_type": "order_detail",
+            "original_reference": r.get("OriginalReference"),
+            "sales_channel": r.get("Sales Channel"),
+            "created_date": r.get("CreatedDate"),
+            "customer": r.get("Customer"),
+            "net_sales": _f(r.get("NetSales")),
+            "total_sales_inc_vat": _f(r.get("TotalSales")),
+            "total_qty": _f(r.get("Total Qty")),
+            "gross_margin": _f(r.get("GrossMargin")),
+            "gross_margin_pct": _pct(_f(r.get("GrossMargin")), _f(r.get("NetSales"))),
+            "discount_code": r.get("discountDescription") or "none",
+            "discount_amount": _f(r.get("DiscountTotal")),
+            "distribution_cost": _f(r.get("Distribution Cost")),
+            "material_cost": _f(r.get("Material Cost")),
+            "commission": _f(r.get("Amazon/ebay Commission")),
+        })
+    _save(raw_rows, out / "header_orders.json")
 
     # 1. Overall summary
     overall: dict = defaultdict(float)
     overall["record_type"] = "overall_order_summary"
     overall["total_orders"] = len(records)
+    overall["sampled_references"] = len(refs)
     channels: set[str] = set()
     customers: set[str] = set()
     dates: list[str] = []
@@ -146,7 +178,7 @@ def aggregate_headers(records: list[dict], out: Path) -> None:
     month_rows.sort(key=lambda x: x["month"])
     _save(month_rows, out / "header_by_month.json")
 
-    # 4. By Customer (top 100 by net sales)
+    # 4. By Customer
     by_cust: dict[str, dict] = defaultdict(lambda: defaultdict(float))
     for r in records:
         cust = str(r.get("Customer") or "Unknown")
@@ -160,7 +192,7 @@ def aggregate_headers(records: list[dict], out: Path) -> None:
         g["gross_margin"] += _f(r.get("GrossMargin"))
         g["total_qty"] += _f(r.get("Total Qty"))
 
-    cust_rows = sorted(by_cust.values(), key=lambda x: x["net_sales"], reverse=True)[:100]
+    cust_rows = sorted(by_cust.values(), key=lambda x: x["net_sales"], reverse=True)
     for g in cust_rows:
         g["gross_margin_pct"] = _pct(g["gross_margin"], g["net_sales"])
     _save([dict(g) for g in cust_rows], out / "header_top_customers.json")
@@ -178,14 +210,37 @@ def aggregate_headers(records: list[dict], out: Path) -> None:
         g["total_discount_amount"] += _f(r.get("DiscountTotal"))
         g["net_sales"] += _f(r.get("NetSales"))
 
-    discount_rows = sorted(by_discount.values(), key=lambda x: x["order_count"], reverse=True)[:50]
+    discount_rows = sorted(by_discount.values(), key=lambda x: x["order_count"], reverse=True)
     _save([dict(g) for g in discount_rows], out / "header_by_discount.json")
 
 
 # ── LinesResults aggregations ─────────────────────────────────────────────────
 
 def aggregate_lines(records: list[dict], out: Path) -> None:
-    logger.info("Aggregating %d order lines …", len(records))
+    logger.info("Aggregating %d sampled order lines …", len(records))
+
+    # 0. Raw line records (one doc per line — for product-level lookup)
+    raw_rows = []
+    for r in records:
+        raw_rows.append({
+            "record_type": "line_detail",
+            "original_reference": r.get("OriginalReference"),
+            "created_date": r.get("CreatedDate"),
+            "style_code": r.get("styleCode"),
+            "product_name": r.get("name"),
+            "net_sales": _f(r.get("NetSales")),
+            "total_cost": _f(r.get("Total Cost")),
+            "gross_margin": _f(r.get("NetSales")) - _f(r.get("Total Cost")),
+            "gross_margin_pct": _pct(
+                _f(r.get("NetSales")) - _f(r.get("Total Cost")),
+                _f(r.get("NetSales")),
+            ),
+            "discount": _f(r.get("Discount")),
+            "commission": _f(r.get("Amazon/ebay Commission")),
+            "material_cost": _f(r.get("Material Cost")),
+            "distribution_cost": _f(r.get("Distribution Cost")),
+        })
+    _save(raw_rows, out / "lines_orders.json")
 
     # 1. Overall lines summary
     overall: dict = defaultdict(float)
@@ -211,7 +266,7 @@ def aggregate_lines(records: list[dict], out: Path) -> None:
     overall["unique_skus"] = len(skus)
     _save([dict(overall)], out / "lines_overall_summary.json")
 
-    # 2. By SKU / product (top 200 by net sales)
+    # 2. By SKU / product
     by_sku: dict[str, dict] = defaultdict(lambda: defaultdict(float))
     for r in records:
         sku = str(r.get("styleCode") or "unknown")
@@ -232,7 +287,7 @@ def aggregate_lines(records: list[dict], out: Path) -> None:
         g["discount"] += _f(r.get("Discount"))
         g["commission"] += _f(r.get("Amazon/ebay Commission"))
 
-    sku_rows = sorted(by_sku.values(), key=lambda x: x["net_sales"], reverse=True)[:200]
+    sku_rows = sorted(by_sku.values(), key=lambda x: x["net_sales"], reverse=True)
     for g in sku_rows:
         g["gross_margin"] = g["net_sales"] - g["total_cost"]
         g["gross_margin_pct"] = _pct(g["gross_margin"], g["net_sales"])
@@ -265,35 +320,64 @@ def aggregate_lines(records: list[dict], out: Path) -> None:
 def main() -> None:
     raw_folder = Path(sys.argv[1] if len(sys.argv) > 1 else "data/uploads")
     out_folder = Path(sys.argv[2] if len(sys.argv) > 2 else "data/aggregated")
+    sample_size = int(sys.argv[3]) if len(sys.argv) > 3 else 25
     out_folder.mkdir(parents=True, exist_ok=True)
 
     header_file = raw_folder / "HeaderResults.json"
     lines_file = raw_folder / "LinesResults.json"
 
-    if header_file.exists():
-        logger.info("Loading %s (%.0f MB) …", header_file.name, header_file.stat().st_size / 1e6)
-        headers = json.loads(header_file.read_text(encoding="utf-8"))
-        aggregate_headers(headers, out_folder)
-        del headers  # free memory before loading lines
-    else:
-        logger.warning("HeaderResults.json not found in %s — skipping.", raw_folder)
+    if not header_file.exists():
+        logger.error("HeaderResults.json not found in %s — cannot continue.", raw_folder)
+        sys.exit(1)
 
+    # ── 1. Load headers and sample N OriginalReferences ──────────────────────
+    logger.info("Loading %s (%.0f MB) …", header_file.name, header_file.stat().st_size / 1e6)
+    all_headers: list[dict] = json.loads(header_file.read_text(encoding="utf-8"))
+
+    sampled_refs = sample_references(all_headers, sample_size)
+
+    sampled_headers = [r for r in all_headers if str(r.get("OriginalReference")) in sampled_refs]
+    logger.info(
+        "Filtered to %d header records matching %d sampled references.",
+        len(sampled_headers), len(sampled_refs),
+    )
+    del all_headers  # free memory
+
+    # ── 2. Save the sampled reference list for traceability ──────────────────
+    _save(
+        sorted(sampled_refs),
+        out_folder / "sampled_references.json",
+    )
+
+    # ── 3. Aggregate headers ──────────────────────────────────────────────────
+    aggregate_headers(sampled_headers, sampled_refs, out_folder)
+    del sampled_headers
+
+    # ── 4. Load lines and filter to sampled references ────────────────────────
     if lines_file.exists():
         logger.info("Loading %s (%.0f MB) …", lines_file.name, lines_file.stat().st_size / 1e6)
-        lines = json.loads(lines_file.read_text(encoding="utf-8"))
-        aggregate_lines(lines, out_folder)
-        del lines
+        all_lines: list[dict] = json.loads(lines_file.read_text(encoding="utf-8"))
+
+        sampled_lines = [r for r in all_lines if str(r.get("OriginalReference")) in sampled_refs]
+        logger.info(
+            "Filtered to %d line records matching sampled references.",
+            len(sampled_lines),
+        )
+        del all_lines
+
+        aggregate_lines(sampled_lines, out_folder)
+        del sampled_lines
     else:
-        logger.warning("LinesResults.json not found in %s — skipping.", raw_folder)
+        logger.warning("LinesResults.json not found in %s — skipping lines.", raw_folder)
 
+    # ── 5. Summary ────────────────────────────────────────────────────────────
     agg_files = list(out_folder.glob("*.json"))
-    total_records = 0
-    for f in agg_files:
-        data = json.loads(f.read_text())
-        total_records += len(data) if isinstance(data, list) else 1
-
+    total_records = sum(
+        len(json.loads(f.read_text())) if isinstance(json.loads(f.read_text()), list) else 1
+        for f in agg_files
+    )
     logger.info(
-        "Done. Wrote %d aggregated files with %d total records to %s",
+        "Done. %d aggregated files, %d total records → %s",
         len(agg_files), total_records, out_folder,
     )
     logger.info("Next step: python scripts/ingest_bi_json.py %s", out_folder)
