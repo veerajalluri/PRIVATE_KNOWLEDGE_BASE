@@ -31,8 +31,6 @@ __pycache__/
 .DS_Store
 
 # ignore uploads folder
-HeaderResults.json
-LinesResults.json
 data/*
 local_data/*
 !data/.gitkeep
