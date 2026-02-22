@@ -33,4 +33,7 @@ __pycache__/
 # ignore uploads folder
 HeaderResults.json
 LinesResults.json
-data
+data/*
+local_data/*
+!data/.gitkeep
+!local_data/.gitkeep
