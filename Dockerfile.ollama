@@ -14,7 +14,7 @@ FROM base AS dependencies
 WORKDIR /home/worker/app
 COPY pyproject.toml poetry.lock ./
 
-ARG POETRY_EXTRAS="ui vector-stores-qdrant llms-ollama embeddings-ollama"
+ARG POETRY_EXTRAS="ui llms-ollama embeddings-ollama"
 RUN poetry install --no-root --extras "${POETRY_EXTRAS}"
 
 FROM base AS app
@@ -42,7 +42,7 @@ WORKDIR /home/worker/app
 RUN chown worker /home/worker/app
 RUN mkdir local_data && chown worker local_data
 RUN mkdir models && chown worker models
-RUN mkdir -p data/uploads data/aggregated && chown -R worker data
+RUN mkdir -p local_data/uploads && chown -R worker local_data
 COPY --chown=worker --from=dependencies /home/worker/app/.venv/ .venv
 COPY --chown=worker private_gpt/ private_gpt
 COPY --chown=worker *.yaml .

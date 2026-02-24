@@ -5,78 +5,109 @@
 
 ---
 
+## Architecture
+
+The pipeline has two phases:
+
+```
+── once (or on data refresh) ──────────────────────────────────────────
+HeaderResults.json  ─┐
+                     ├─ prepare_bi_data.py ──▶ local_data/bi.db
+LinesResults.json   ─┘   (read_json_auto)       orders table  165K rows
+                                               order_lines table  512K rows
+
+── every query ────────────────────────────────────────────────────────
+User question
+    │
+    ▼
+BISqlService.query()
+    ├─ 1. Build NSQL prompt  (question + full schema DDL)
+    ├─ 2. duckdb-nsql via Ollama  →  SQL
+    ├─ 3. Strip markdown fences, extract first statement
+    ├─ 4. Execute against bi.db
+    │       ✓  format as markdown table  →  return to user
+    │       ✗  append error to prompt, retry once (self-correct)
+    └─ 5. After 2 failed attempts  →  return error + last SQL
+```
+
+No vector embeddings, no Qdrant, no RAG retrieval. The LLM writes SQL; DuckDB runs it against the full raw dataset.
+
+---
+
 ## Problems encountered & how they were solved
 
-### Problem 1 — JSON ingestion produced one blob per file
+### Problem 1 — RAG hallucination on aggregation queries
 
-**What happened:** Zylon's built-in `JSONReader` (from LlamaIndex) reads a JSON file and dumps the entire
-contents as a single text document. For a BI export that is an array of records, this means all 165,919
-order rows land in one document — too large to embed, too coarse to retrieve usefully.
+**What happened:** The original approach embedded pre-aggregated JSON summary documents into a
+Qdrant vector store and used RAG (`top_k=10`) to answer questions. For aggregation queries
+("total revenue", "best margin channel"), the LLM saw only 10 retrieved chunks and fabricated
+totals that bore no relation to the actual data.
 
-**Solution:** Replaced `JSONReader` with a custom `BIJsonReader`
-([`private_gpt/components/ingest/bi_json_reader.py`](private_gpt/components/ingest/bi_json_reader.py))
-that produces **one Document per JSON record**, with nested objects flattened to `key: value` text.
-The swap is a single-line change in
-[`private_gpt/components/ingest/ingest_helper.py`](private_gpt/components/ingest/ingest_helper.py).
+**Solution:** Replaced the entire RAG path with **text-to-SQL**. `BISqlService`
+([`private_gpt/components/sql/bi_sql_service.py`](private_gpt/components/sql/bi_sql_service.py))
+translates questions to DuckDB SQL using the `duckdb-nsql` model (fine-tuned for SQL generation),
+executes the SQL against the real data, and returns exact results. Aggregations are computed by the
+database engine, not estimated by the LLM.
 
 ---
 
-### Problem 2 — 678K raw records cannot be embedded on CPU
+### Problem 2 — 678K raw records, days to embed on CPU
 
 **What happened:** The two input files (`HeaderResults.json` 138 MB / 165K orders,
-`LinesResults.json` 324 MB / 512K line items) produce ~678K documents if embedded record-by-record.
-On a CPU-only Ollama setup this would take hours or days, and the resulting vector store would be
-~10 GB. More fundamentally, RAG with `top_k=10` over 678K records sees 0.001% of the data —
-so any aggregation query ("total revenue", "best margin channel") returns a fabricated answer
-based on 10 arbitrary rows.
+`LinesResults.json` 324 MB / 512K line items) would take hours or days to embed on CPU, and the
+resulting vector store would be ~10 GB.
 
-**Solution:** A pre-aggregation step
-([`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py)) runs **before** ingestion and
-uses only the Python standard library to reduce 678K records to **389 summary documents** across 8 files:
+**Solution:** No embedding at all. [`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py)
+uses DuckDB's native `read_json_auto()` to load both files directly into a local `bi.db` file:
 
-| Aggregated file | Records | Answers |
-|----------------|---------|---------|
-| `header_overall_summary.json` | 1 | Total revenue, orders, date range |
-| `header_by_channel.json` | 11 | Revenue / margin by sales channel |
-| `header_by_month.json` | 13 | Month-over-month trends |
-| `header_top_customers.json` | 100 | Top customers by net sales |
-| `header_by_discount.json` | 50 | Discount code usage |
-| `lines_overall_summary.json` | 1 | Total cost breakdown |
-| `lines_by_sku.json` | 200 | Top 200 products by revenue & margin |
-| `lines_by_month.json` | 13 | Monthly line-item trends |
+```
+HeaderResults.json  →  table: orders       (all 165K rows)
+LinesResults.json   →  table: order_lines  (all 512K rows)
+```
 
-The script runs in ~6 seconds. The 389 summary records embed in minutes on CPU, not days.
-`BIJsonReader` also guards against accidental direct ingestion of raw files with a 5,000-record
-warning and hard truncation.
+DuckDB streams the JSON files without loading them fully into Python memory. The whole load
+completes in seconds. At query time, DuckDB executes SQL against the full dataset in milliseconds —
+no sampling, no pre-aggregation, no information loss.
 
 ---
 
-### Problem 3 — RAG top_k too low for multi-record BI queries
+### Problem 3 — LLM wraps SQL in markdown fences
 
-**What happened:** The default `similarity_top_k: 2` means the LLM only sees 2 retrieved
-chunks per query. For BI questions that need to reason across multiple channels, months or
-products this is insufficient.
+**What happened:** The `duckdb-nsql` model frequently returns SQL wrapped in ` ```sql ``` ` code
+fences. Passing that raw output to DuckDB raises a parse error.
 
-**Solution:** `settings-bi.yaml` sets `similarity_top_k: 10` so the LLM sees up to 10
-summary records per query. With only 389 total documents, 10 of those cover a meaningful
-slice of the data for any well-formed BI question.
+**Solution:** `_extract_sql()` in `bi_sql_service.py` strips code fences before execution,
+handling both ` ```sql ``` ` and ` ``` ``` ` variants.
 
 ---
 
-### Problem 4 — Docker stack was over-engineered for local BI
+### Problem 4 — No recovery when generated SQL fails
 
-**What happened:** The upstream `docker-compose.yaml` runs three services for the Ollama mode:
-a Traefik reverse proxy, an Ollama container, and the PrivateGPT container. Traefik adds
-complexity and memory overhead that is unnecessary for a single-host local deployment.
+**What happened:** If the model produced invalid SQL (wrong column name, bad syntax), the user
+received a dead-end error with no way to recover.
+
+**Solution:** `BISqlService.query()` retries once on failure. The DuckDB error message is appended
+to the prompt so the model can self-correct:
+
+```
+-- The previous SQL attempt failed with: <error>
+-- Corrected SQL:
+```
+
+---
+
+### Problem 5 — Docker stack was over-engineered for local BI
+
+**What happened:** The upstream `docker-compose.yaml` runs three services: Traefik proxy, Ollama,
+and PrivateGPT. Traefik adds complexity and memory overhead unnecessary for a single-host
+local deployment.
 
 **Solution:** [`docker-compose.bi.yaml`](docker-compose.bi.yaml) is a lean 2-service file
-(Ollama + conv-bi app) with no proxy layer and a three-stage entrypoint:
+(Ollama + conv-bi app) with a two-stage entrypoint:
 
 ```
-prepare_bi_data.py  →  ingest_bi_json.py  →  python -m private_gpt
+prepare_bi_data.py  →  python -m private_gpt
 ```
-
-Qdrant runs embedded inside the app container (no third container needed).
 
 ---
 
@@ -86,13 +117,13 @@ Qdrant runs embedded inside the app container (no third container needed).
 
 ```bash
 # 1. Copy your JSON exports
-cp HeaderResults.json LinesResults.json data/uploads/
+cp HeaderResults.json LinesResults.json local_data/uploads/
 
-# 2. Start the stack — aggregates data, embeds summaries, then serves the UI
-#    (downloads Mistral 7B + nomic-embed-text on first run, ~4 GB)
+# 2. Start the stack — loads data into DuckDB, then serves the UI
+#    (downloads duckdb-nsql 7B on first run, ~4 GB)
 make docker-up
 
-# 3. Open http://localhost:8001 and ask questions
+# 3. Open http://localhost:8001, switch to RAG mode, and ask questions
 ```
 
 ### Local (no Docker)
@@ -100,35 +131,37 @@ make docker-up
 Requires [Ollama](https://ollama.ai) installed and running.
 
 ```bash
-ollama pull mistral && ollama pull nomic-embed-text
+ollama pull duckdb-nsql && ollama pull nomic-embed-text
 
-cp HeaderResults.json LinesResults.json data/uploads/
+cp HeaderResults.json LinesResults.json local_data/uploads/
 
-make bi    # aggregate raw JSON → embed summaries into Qdrant
+make bi    # load raw JSON into local_data/bi.db
 make run   # start the app at http://localhost:8001
 ```
 
-On subsequent data refreshes, just re-run `make bi && make run`.
+On subsequent data refreshes, re-run `make bi && make run`.
 
 ### Example questions
 
 - *"What is the total net sales across all channels?"*
 - *"Which sales channel has the highest gross margin percentage?"*
 - *"Show me the top 5 products by revenue."*
-- *"How did monthly revenue trend month over month?"*
-- *"Which discount codes drive the most orders?"*
+- *"How did monthly revenue trend over time?"*
+- *"What is the average order value for the retail channel?"*
+- *"Which customer placed the highest value order?"*
+
+---
 
 ## Makefile reference
 
 ```
-make bi            Aggregate raw JSON + embed summaries (full data pipeline)
-make prepare       Aggregate raw JSON in data/uploads/ → data/aggregated/
-make ingest        Embed aggregated summaries into Qdrant
+make bi            Load raw JSON into local_data/bi.db (full data pipeline)
+make prepare       Load raw JSON in local_data/uploads/ → local_data/bi.db
 make run           Start the app (local profile)
 make dev           Start with auto-reload for development
 
-make docker-build  Rebuild docker image
-make docker-up     Start the full Docker stack (Ollama + conv-bi)
+make docker-build  Rebuild the conv-bi Docker image
+make docker-up     Start the full stack (Ollama + conv-bi)
 make docker-down   Stop the stack
 make docker-logs   Tail container logs
 
@@ -138,27 +171,61 @@ make wipe          Clear the vector store and docstore
 make list          Print all available targets
 ```
 
+---
+
+## Tests
+
+```
+make test
+```
+
+48 tests, no external services required (all DuckDB in-memory or tmp files, LLM mocked).
+
+### `tests/components/sql/test_bi_sql_service.py` — 23 tests
+
+| Class | Coverage |
+|-------|----------|
+| `TestExtractSql` | Plain SQL, ` ```sql ``` ` fences, ` ``` ``` ` fences, semicolon truncation, whitespace stripping |
+| `TestFormatResult` | Markdown table output, empty result, raises on bad SQL, aggregation correctness |
+| `TestBISqlServiceQuery` | Successful query, fenced SQL from LLM, retry on SQL error, error appended to retry prompt, exhausted retries, LLM exception, empty question |
+
+### `tests/scripts/test_prepare_bi_data.py` — 25 tests
+
+| Class | Coverage |
+|-------|----------|
+| `TestPrepareBiData` | Creates `orders` table, correct columns, creates `order_lines` when present, skips gracefully on missing lines file, exits with code 1 on missing header, creates parent directories, `CREATE OR REPLACE` does not double-count on re-run |
+| `TestAggregationsOnOrders` | Total net sales, order count, net sales by channel, order count by channel, distinct channels, average order value, max/min, date-range filter (Jan/Feb), top channel, gross margin by channel, customer lookup |
+| `TestAggregationsOnOrderLines` | Total net sales, top SKU, net sales by SKU, distinct SKU count, gross margin per SKU, JOIN to orders by `OriginalReference` |
+
+> **Note:** `CreatedDate` is inferred as `DATE` (not `VARCHAR`) by `read_json_auto()`.
+> Date filters must use range comparisons (`>= '2024-01-01'`), not `LIKE '2024-01%'`.
+
+---
+
 ## Cost
 
 | Component | Cost |
 |-----------|------|
-| Ollama — Mistral 7B Q4 (LLM) | $0 — CPU inference |
-| Ollama — nomic-embed-text (embeddings) | $0 — CPU inference |
-| Qdrant (vector store) | $0 — embedded, file-based |
+| Ollama — duckdb-nsql 7B (SQL generation) | $0 — CPU inference |
+| DuckDB embedded (query engine) | $0 — in-process, file-based |
 | Cloud API calls | $0 — none |
 
-## Files added / changed
+---
+
+## Key files
 
 | File | Purpose |
 |------|---------|
-| [`private_gpt/components/ingest/bi_json_reader.py`](private_gpt/components/ingest/bi_json_reader.py) | One Document per JSON record |
-| [`private_gpt/components/ingest/ingest_helper.py`](private_gpt/components/ingest/ingest_helper.py) | Routes `.json` to BIJsonReader |
-| [`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py) | Aggregates raw JSON into summary docs |
-| [`scripts/ingest_bi_json.py`](scripts/ingest_bi_json.py) | Ingests aggregated summaries into Qdrant |
-| [`settings-bi.yaml`](settings-bi.yaml) | BI-tuned config (top_k, system prompt, Mistral) |
-| [`settings-local.yaml`](settings-local.yaml) | Local dev config mirroring settings-bi.yaml |
-| [`docker-compose.bi.yaml`](docker-compose.bi.yaml) | Lean 2-service Docker stack |
+| [`scripts/prepare_bi_data.py`](scripts/prepare_bi_data.py) | Loads raw JSON into DuckDB (`orders`, `order_lines`) |
+| [`private_gpt/components/sql/bi_sql_service.py`](private_gpt/components/sql/bi_sql_service.py) | Text-to-SQL: question → SQL → DuckDB result, with retry |
+| [`private_gpt/server/chat/chat_service.py`](private_gpt/server/chat/chat_service.py) | Routes RAG-mode requests to `BISqlService` |
+| [`private_gpt/components/ingest/bi_json_reader.py`](private_gpt/components/ingest/bi_json_reader.py) | LlamaIndex reader for `.json` files (non-BI ingest path) |
+| [`settings-bi.yaml`](settings-bi.yaml) | BI config: duckdb-nsql model, 5 min timeout, deterministic temp |
+| [`settings-local.yaml`](settings-local.yaml) | Local dev config (same as bi, localhost Ollama URL) |
+| [`docker-compose.bi.yaml`](docker-compose.bi.yaml) | Lean 2-service Docker stack (Ollama + app) |
 | [`Makefile`](Makefile) | Developer workflow targets |
+| [`tests/components/sql/test_bi_sql_service.py`](tests/components/sql/test_bi_sql_service.py) | Unit tests for SQL extraction, formatting, and query retry |
+| [`tests/scripts/test_prepare_bi_data.py`](tests/scripts/test_prepare_bi_data.py) | Integration tests for data loading and aggregation correctness |
 
 ---
 
@@ -324,21 +391,3 @@ This project has been strongly influenced and supported by other amazing project
 and [SentenceTransformers](https://www.sbert.net/).
 
 
-<!-- to run  -->
-
-docker compose -f docker-compose.bi.yaml up
-
-Then open http://localhost:8001 and ask: "What is the total net sales by channel?" or "Which product has the highest margin?"
-
-
-scripts/prepare_bi_data.py — ran in 6 seconds, produced 8 files / 389 records:
-
-Aggregated file	Records	Answers questions like
-header_overall_summary.json	1	Total revenue, total orders, date range
-header_by_channel.json	11	Which channel has best margin?
-header_by_month.json	13	Month-over-month trend?
-header_top_customers.json	100	Top customers by sales?
-header_by_discount.json	50	Which discount codes are used most?
-lines_overall_summary.json	1	Total cost breakdown
-lines_by_sku.json	200	Top products by revenue/margin?
-lines_by_month.json	13	Monthly line-item trends

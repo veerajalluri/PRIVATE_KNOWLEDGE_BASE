@@ -3,21 +3,22 @@ server:
 
 llm:
   mode: ollama          # Local LLM, zero API cost
-  max_new_tokens: 1024  # BI answers can be long
-  context_window: 8192  # Mistral supports 8k context
-  temperature: 0.05     # Low = factual, deterministic
-  prompt_style: mistral
+  max_new_tokens: 512   # SQL responses are short
+  context_window: 8192
+  temperature: 0.0      # Deterministic SQL generation
 
 embedding:
-  mode: ollama
-  ingest_mode: simple
-  model: nomic-embed-text  # Fast, free, good for structured data
+  mode: ollama          # override base huggingface default; embeddings-huggingface not installed
 
-vectorstore:
-  database: qdrant       # Built into Zylon, no separate service needed
-
-rag:
-  similarity_top_k: 10   # Retrieve more records for aggregation queries
+ui:
+  enabled: true          # Zylon ships with a basic chat UI
+  default_mode: "RAG"    # "RAG" mode now triggers the text-to-SQL pipeline
+  default_chat_system_prompt: >
+    You are a helpful business intelligence assistant.
+    Answer questions clearly and concisely based on the data available.
+  default_query_system_prompt: >
+    You are a business intelligence analyst using DuckDB-NSQL.
+    Generate accurate SQL to answer the user's question from the available tables.
 
 data:
   local_data_folder: local_data/private_gpt
@@ -25,21 +26,10 @@ data:
     enabled: true
     allow_ingest_from: ["*"]
 
-ui:
-  enabled: true          # Zylon ships with a basic chat UI
-  default_mode: "RAG"
-  default_query_system_prompt: >
-    You are a business intelligence analyst. The context below contains
-    structured business records retrieved from the data store.
-    Answer the user's question using only the information in the context.
-    For numeric questions, compute totals, averages, or counts from the
-    records shown. Always mention how many records support your answer.
-    If the answer cannot be derived from the context, say so clearly —
-    do not guess or fabricate figures.
-
 ollama:
-  llm_model: mistral
-  embedding_model: nomic-embed-text
+  llm_model: duckdb-nsql
+  embedding_model: nomic-embed-text  # kept for basic chat mode fallback
   api_base: http://localhost:11434
   embedding_api_base: http://localhost:11434
+  request_timeout: 300.0             # 5 min — 7B model on CPU is slow
   autopull_models: true

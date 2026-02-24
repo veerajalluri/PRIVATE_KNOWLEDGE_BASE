@@ -153,7 +153,7 @@ class LLMSettings(BaseModel):
 
 
 class VectorstoreSettings(BaseModel):
-    database: Literal["chroma", "qdrant", "postgres", "clickhouse", "milvus"]
+    database: Literal["simple", "chroma", "postgres", "clickhouse", "milvus"]
 
 
 class NodeStoreSettings(BaseModel):
@@ -512,60 +512,6 @@ class PostgresSettings(BaseModel):
     )
 
 
-class QdrantSettings(BaseModel):
-    location: str | None = Field(
-        None,
-        description=(
-            "If `:memory:` - use in-memory Qdrant instance.\n"
-            "If `str` - use it as a `url` parameter.\n"
-        ),
-    )
-    url: str | None = Field(
-        None,
-        description=(
-            "Either host or str of 'Optional[scheme], host, Optional[port], Optional[prefix]'."
-        ),
-    )
-    port: int | None = Field(6333, description="Port of the REST API interface.")
-    grpc_port: int | None = Field(6334, description="Port of the gRPC interface.")
-    prefer_grpc: bool | None = Field(
-        False,
-        description="If `true` - use gRPC interface whenever possible in custom methods.",
-    )
-    https: bool | None = Field(
-        None,
-        description="If `true` - use HTTPS(SSL) protocol.",
-    )
-    api_key: str | None = Field(
-        None,
-        description="API key for authentication in Qdrant Cloud.",
-    )
-    prefix: str | None = Field(
-        None,
-        description=(
-            "Prefix to add to the REST URL path."
-            "Example: `service/v1` will result in "
-            "'http://localhost:6333/service/v1/{qdrant-endpoint}' for REST API."
-        ),
-    )
-    timeout: float | None = Field(
-        None,
-        description="Timeout for REST and gRPC API requests.",
-    )
-    host: str | None = Field(
-        None,
-        description="Host name of Qdrant service. If url and host are None, set to 'localhost'.",
-    )
-    path: str | None = Field(None, description="Persistence path for QdrantLocal.")
-    force_disable_check_same_thread: bool | None = Field(
-        True,
-        description=(
-            "For QdrantLocal, force disable check_same_thread. Default: `True`"
-            "Only use this if you can guarantee that you can resolve the thread safety outside QdrantClient."
-        ),
-    )
-
-
 class MilvusSettings(BaseModel):
     uri: str = Field(
         "local_data/private_gpt/milvus/milvus_local.db",
@@ -604,7 +550,6 @@ class Settings(BaseModel):
     nodestore: NodeStoreSettings
     rag: RagSettings
     summarize: SummarizeSettings
-    qdrant: QdrantSettings | None = None
     postgres: PostgresSettings | None = None
     clickhouse: ClickHouseSettings | None = None
     milvus: MilvusSettings | None = None

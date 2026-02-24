@@ -43,13 +43,10 @@ dev:
 ########################################################################################################################
 
 prepare:
-	poetry run python scripts/prepare_bi_data.py data/uploads data/aggregated
+	poetry run python scripts/prepare_bi_data.py local_data/uploads local_data/bi.db
 
-ingest:
-	PGPT_PROFILES=local poetry run python scripts/ingest_bi_json.py data/aggregated
-
-bi: prepare ingest
-	@echo "Data pipeline complete. Run 'make run' to start the app."
+bi: prepare
+	@echo "Data ready. Run 'make run' to start the app."
 
 ########################################################################################################################
 # Docker
@@ -63,7 +60,7 @@ docker-up: _dirs
 
 # Ensure host-side mount points exist before Docker creates them as root-owned dirs
 _dirs:
-	@mkdir -p data/uploads data/aggregated local_data models
+	@mkdir -p local_data/uploads local_data models
 
 docker-down:
 	docker compose -f docker-compose.bi.yaml down
@@ -94,9 +91,8 @@ list:
 	@echo "  dev             Start with auto-reload for development"
 	@echo ""
 	@echo "BI data pipeline:"
-	@echo "  prepare         Aggregate raw JSON in data/uploads/ → data/aggregated/"
-	@echo "  ingest          Embed aggregated summaries into Qdrant"
-	@echo "  bi              prepare + ingest (full pipeline)"
+	@echo "  prepare         Load raw JSON in local_data/uploads/ → local_data/bi.db"
+	@echo "  bi              prepare — DuckDB serves text-to-SQL queries at runtime"
 	@echo ""
 	@echo "Docker:"
 	@echo "  docker-build    Build the conv-bi Docker image"

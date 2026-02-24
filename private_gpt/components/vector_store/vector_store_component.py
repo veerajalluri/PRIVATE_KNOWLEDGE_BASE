@@ -38,6 +38,13 @@ class VectorStoreComponent:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         match settings.vectorstore.database:
+            case "simple":
+                from llama_index.core.vector_stores import SimpleVectorStore
+
+                self.vector_store = typing.cast(
+                    BasePydanticVectorStore, SimpleVectorStore()
+                )
+
             case "postgres":
                 try:
                     from llama_index.vector_stores.postgres import (  # type: ignore
@@ -91,35 +98,6 @@ class VectorStoreComponent:
                     BatchedChromaVectorStore(
                         chroma_client=chroma_client, chroma_collection=chroma_collection
                     ),
-                )
-
-            case "qdrant":
-                try:
-                    from llama_index.vector_stores.qdrant import (  # type: ignore
-                        QdrantVectorStore,
-                    )
-                    from qdrant_client import QdrantClient  # type: ignore
-                except ImportError as e:
-                    raise ImportError(
-                        "Qdrant dependencies not found, install with `poetry install --extras vector-stores-qdrant`"
-                    ) from e
-
-                if settings.qdrant is None:
-                    logger.info(
-                        "Qdrant config not found. Using default settings."
-                        "Trying to connect to Qdrant at localhost:6333."
-                    )
-                    client = QdrantClient()
-                else:
-                    client = QdrantClient(
-                        **settings.qdrant.model_dump(exclude_none=True)
-                    )
-                self.vector_store = typing.cast(
-                    BasePydanticVectorStore,
-                    QdrantVectorStore(
-                        client=client,
-                        collection_name="make_this_parameterizable_per_api_call",
-                    ),  # TODO
                 )
 
             case "milvus":
@@ -200,16 +178,10 @@ class VectorStoreComponent:
         context_filter: ContextFilter | None = None,
         similarity_top_k: int = 2,
     ) -> VectorIndexRetriever:
-        # This way we support qdrant (using doc_ids) and the rest (using filters)
         return VectorIndexRetriever(
             index=index,
             similarity_top_k=similarity_top_k,
-            doc_ids=context_filter.docs_ids if context_filter else None,
-            filters=(
-                _doc_id_metadata_filter(context_filter)
-                if self.settings.vectorstore.database != "qdrant"
-                else None
-            ),
+            filters=_doc_id_metadata_filter(context_filter),
         )
 
     def close(self) -> None:

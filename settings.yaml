@@ -98,7 +98,7 @@ huggingface:
   trust_remote_code: true
 
 vectorstore:
-  database: qdrant
+  database: simple
 
 nodestore:
   database: simple
@@ -107,9 +107,6 @@ milvus:
   uri: local_data/private_gpt/milvus/milvus_local.db
   collection_name: milvus_db
   overwrite: false
-
-qdrant:
-  path: local_data/private_gpt/qdrant
 
 postgres:
   host: localhost
