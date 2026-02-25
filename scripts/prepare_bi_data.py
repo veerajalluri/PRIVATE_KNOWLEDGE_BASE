@@ -51,6 +51,11 @@ def main() -> None:
     n = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
     logger.info("  → %d rows in 'orders'", n)
 
+    # Indexes on orders: join key + common filter columns
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_ref  ON orders (\"OriginalReference\")")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON orders (\"CreatedDate\")")
+    logger.info("  → indexes created on orders (OriginalReference, CreatedDate)")
+
     # Load all order lines (optional)
     if lines_file.exists():
         logger.info("Loading %s (%.0f MB) …", lines_file.name, lines_file.stat().st_size / 1e6)
@@ -59,6 +64,12 @@ def main() -> None:
         )
         n = conn.execute("SELECT COUNT(*) FROM order_lines").fetchone()[0]
         logger.info("  → %d rows in 'order_lines'", n)
+
+        # Indexes on order_lines: join key + SKU filter
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_lines_ref ON order_lines (\"OriginalReference\")")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON order_lines (\"CreatedDate\")")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_lines_sku ON order_lines (styleCode)")
+        logger.info("  → indexes created on order_lines (OriginalReference, styleCode)")
     else:
         logger.warning("LinesResults.json not found in %s — skipping order lines.", raw_folder)
 

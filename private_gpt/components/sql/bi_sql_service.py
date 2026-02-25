@@ -11,6 +11,7 @@ Workflow:
 No vector embeddings or vector store are involved.
 """
 import logging
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -62,17 +63,19 @@ def _extract_sql(raw: str) -> str:
     return text.strip()
 
 
-def _format_result(conn: "duckdb.DuckDBPyConnection", sql: str) -> str:
-    """Execute SQL and return a plain-text formatted result.
+def _format_result(conn: "duckdb.DuckDBPyConnection", sql: str) -> tuple[str, float]:
+    """Execute SQL and return (formatted result, execution time in seconds).
 
     Raises duckdb.Error (or any exception) on bad SQL so the caller can retry.
     """
+    t0 = time.perf_counter()
     rel = conn.execute(sql)
     cols = [desc[0] for desc in rel.description]
     rows = rel.fetchall()
+    elapsed = time.perf_counter() - t0
 
     if not rows:
-        return "*(no rows returned)*"
+        return "*(no rows returned)*", elapsed
 
     # Build a simple markdown table
     col_widths = [
@@ -85,7 +88,7 @@ def _format_result(conn: "duckdb.DuckDBPyConnection", sql: str) -> str:
         " | ".join(str(v).ljust(col_widths[i]) for i, v in enumerate(row))
         for row in rows
     )
-    return f"{header}\n{sep}\n{body}"
+    return f"{header}\n{sep}\n{body}", elapsed
 
 
 @singleton
@@ -149,7 +152,13 @@ class BISqlService:
             schema_ddl=self._schema_ddl,
             question=question.strip(),
         )
+        logger.info(
+            "BISqlService: prompt_chars=%d schema_chars=%d",
+            len(prompt),
+            len(self._schema_ddl),
+        )
 
+        t_query_start = time.perf_counter()
         last_error: str | None = None
         sql = ""
 
@@ -161,17 +170,31 @@ class BISqlService:
                     "-- Corrected SQL:\n"
                 )
 
+            t_llm = time.perf_counter()
             try:
                 raw_sql = self._llm.complete(prompt).text
             except Exception as exc:
                 logger.exception("BISqlService: LLM completion failed")
                 return f"Could not generate SQL: {exc}"
+            llm_elapsed = time.perf_counter() - t_llm
 
             sql = _extract_sql(raw_sql)
-            logger.info("BISqlService (attempt %d): %s", attempt + 1, sql)
+            logger.info(
+                "BISqlService (attempt %d): llm=%.2fs  sql=%s",
+                attempt + 1,
+                llm_elapsed,
+                sql,
+            )
 
             try:
-                result_table = _format_result(self._conn, sql)
+                result_table, db_elapsed = _format_result(self._conn, sql)
+                total_elapsed = time.perf_counter() - t_query_start
+                logger.info(
+                    "BISqlService: done  llm=%.2fs  db=%.3fs  total=%.2fs",
+                    llm_elapsed,
+                    db_elapsed,
+                    total_elapsed,
+                )
                 return (
                     f"**SQL:**\n```sql\n{sql}\n```\n\n"
                     f"**Results:**\n```\n{result_table}\n```"
@@ -179,7 +202,10 @@ class BISqlService:
             except Exception as exc:
                 last_error = str(exc)
                 logger.warning(
-                    "BISqlService: SQL error on attempt %d: %s", attempt + 1, exc
+                    "BISqlService: SQL error on attempt %d (llm=%.2fs): %s",
+                    attempt + 1,
+                    llm_elapsed,
+                    exc,
                 )
 
         return (
