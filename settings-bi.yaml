@@ -1,9 +1,9 @@
 # Conversational BI configuration — layered on top of settings.yaml
 # Activate with: PGPT_PROFILES=bi
 #
-# Cost: $0/month — all models run locally via Ollama, no cloud API calls.
-# Architecture: text-to-SQL via DuckDB-NSQL-7B reading parquet files directly.
-# No vector embeddings or vector store are used in the RAG (SQL) path.
+# Architecture: text-to-SQL via Claude + DuckDB MCP server.
+# Claude uses get_schema / execute_sql MCP tools to query the DuckDB database.
+# Requires: ANTHROPIC_API_KEY environment variable.
 
 server:
   env_name: bi
@@ -41,3 +41,7 @@ ollama:
   keep_alive: 5m
   request_timeout: 300.0                 # 5 min — 7B model on CPU is slow
   autopull_models: true                  # pull models automatically on first run
+
+anthropic:
+  api_key: ${ANTHROPIC_API_KEY:}
+  model: claude-opus-4-6

@@ -10,7 +10,7 @@ from llama_index.core.types import TokenGen
 from pydantic import BaseModel
 
 from private_gpt.components.llm.llm_component import LLMComponent
-from private_gpt.components.sql.bi_sql_service import BISqlService
+from private_gpt.components.sql.mcp_bi_service import MCPBiService
 from private_gpt.open_ai.extensions.context_filter import ContextFilter
 from private_gpt.server.chunks.chunks_service import Chunk
 from private_gpt.settings.settings import Settings
@@ -69,11 +69,11 @@ class ChatService:
         self,
         settings: Settings,
         llm_component: LLMComponent,
-        bi_sql_service: BISqlService,
+        mcp_bi_service: MCPBiService,
     ) -> None:
         self.settings = settings
         self.llm_component = llm_component
-        self._bi_sql_service = bi_sql_service
+        self._mcp_bi_service = mcp_bi_service
 
     def _chat_engine(self, system_prompt: str | None = None) -> BaseChatEngine:
         return SimpleChatEngine.from_defaults(
@@ -107,7 +107,7 @@ class ChatService:
             # text-to-SQL path. Vector retrieval is bypassed entirely;
             # BISqlService translates the question to DuckDB SQL and executes
             # it against the pre-loaded bi.db written by prepare_bi_data.py.
-            result = self._bi_sql_service.query(last_message or "")
+            result = self._mcp_bi_service.query(last_message or "")
             return CompletionGen(response=iter([result]), sources=[])
 
         chat_engine = self._chat_engine(system_prompt=system_prompt)
@@ -147,7 +147,7 @@ class ChatService:
             # text-to-SQL path. Vector retrieval is bypassed entirely;
             # BISqlService translates the question to DuckDB SQL and executes
             # it against the pre-loaded bi.db written by prepare_bi_data.py.
-            result = self._bi_sql_service.query(last_message or "")
+            result = self._mcp_bi_service.query(last_message or "")
             return Completion(response=result, sources=[])
 
         chat_engine = self._chat_engine(system_prompt=system_prompt)

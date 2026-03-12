@@ -11,6 +11,32 @@ from typing import Any
 import gradio as gr  # type: ignore
 from fastapi import FastAPI
 from gradio.themes.utils.colors import slate  # type: ignore
+
+# Patch gradio-client 1.3.0 bug: boolean JSON Schemas (e.g. additionalProperties: true)
+# are not handled in get_type() or _json_schema_to_python_type(). Fixed in gradio 5+.
+try:
+    import gradio_client.utils as _gc_utils  # type: ignore
+
+    _orig_get_type = _gc_utils.get_type
+
+    def _patched_get_type(schema: object) -> str:
+        if isinstance(schema, bool):
+            return "any"
+        return _orig_get_type(schema)  # type: ignore[arg-type]
+
+    _gc_utils.get_type = _patched_get_type
+
+    _orig_json_schema = _gc_utils._json_schema_to_python_type  # type: ignore[attr-defined]
+
+    def _patched_json_schema(schema: object, defs: object = None) -> str:
+        if isinstance(schema, bool):
+            return "any"
+        return _orig_json_schema(schema, defs)  # type: ignore[arg-type]
+
+    _gc_utils._json_schema_to_python_type = _patched_json_schema  # type: ignore[attr-defined]
+except Exception:
+    pass
+
 from injector import inject, singleton
 from llama_index.core.llms import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.types import TokenGen

@@ -79,7 +79,7 @@ class TestExtractSql:
 class TestFormatResult:
     def test_returns_markdown_table_with_header(self):
         conn = _orders_conn()
-        result = _format_result(conn, "SELECT channel, net_sales FROM orders ORDER BY net_sales")
+        result, _ = _format_result(conn, "SELECT channel, net_sales FROM orders ORDER BY net_sales")
         lines = result.strip().split("\n")
         assert "channel" in lines[0]
         assert "net_sales" in lines[0]
@@ -89,7 +89,7 @@ class TestFormatResult:
 
     def test_empty_result_returns_no_rows_message(self):
         conn = _orders_conn()
-        result = _format_result(conn, "SELECT * FROM orders WHERE net_sales > 9999")
+        result, _ = _format_result(conn, "SELECT * FROM orders WHERE net_sales > 9999")
         assert result == "*(no rows returned)*"
 
     def test_raises_on_invalid_sql(self):
@@ -104,7 +104,7 @@ class TestFormatResult:
 
     def test_column_widths_fit_values(self):
         conn = _orders_conn()
-        result = _format_result(conn, "SELECT channel FROM orders ORDER BY channel")
+        result, _ = _format_result(conn, "SELECT channel FROM orders ORDER BY channel")
         # Each line should have consistent column alignment
         lines = [l for l in result.split("\n") if l.strip()]
         # Header and separator should have same width structure
@@ -112,7 +112,7 @@ class TestFormatResult:
 
     def test_aggregation_query(self):
         conn = _orders_conn()
-        result = _format_result(conn, "SELECT SUM(net_sales) AS total FROM orders")
+        result, _ = _format_result(conn, "SELECT SUM(net_sales) AS total FROM orders")
         assert "350" in result  # 100 + 200 + 50
 
 

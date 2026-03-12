@@ -67,7 +67,6 @@ def main() -> None:
 
         # Indexes on order_lines: join key + SKU filter
         conn.execute("CREATE INDEX IF NOT EXISTS idx_lines_ref ON order_lines (\"OriginalReference\")")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_date ON order_lines (\"CreatedDate\")")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_lines_sku ON order_lines (styleCode)")
         logger.info("  → indexes created on order_lines (OriginalReference, styleCode)")
     else:

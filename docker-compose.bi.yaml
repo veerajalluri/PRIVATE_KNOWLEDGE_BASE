@@ -62,6 +62,7 @@ services:
       PGPT_PROFILES: bi                # loads settings-bi.yaml on top of settings.yaml
       PGPT_MODE: ollama
       PGPT_OLLAMA_API_BASE: http://ollama:11434
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # required for Claude MCP client
     # Pipeline: aggregate raw JSON → bi.db (DuckDB) → serve text-to-SQL UI
     # No vector ingestion step needed (DuckDB reads native tables at query time).
     #

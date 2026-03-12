@@ -1,6 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+pytest.importorskip("gradio", reason="UI dependencies not installed; run `poetry install --extras ui` to enable")
+
 
 @pytest.mark.parametrize(
     "test_client", [{"ui": {"enabled": True, "path": "/ui"}}], indirect=True

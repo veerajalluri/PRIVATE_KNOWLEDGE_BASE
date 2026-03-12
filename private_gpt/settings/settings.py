@@ -280,6 +280,16 @@ class GeminiSettings(BaseModel):
     )
 
 
+class AnthropicSettings(BaseModel):
+    api_key: str = Field(
+        description="Anthropic API key. Set via ANTHROPIC_API_KEY env var.",
+    )
+    model: str = Field(
+        "claude-opus-4-6",
+        description="Claude model to use for the MCP BI agent.",
+    )
+
+
 class OllamaSettings(BaseModel):
     api_base: str = Field(
         "http://localhost:11434",
@@ -553,6 +563,7 @@ class Settings(BaseModel):
     postgres: PostgresSettings | None = None
     clickhouse: ClickHouseSettings | None = None
     milvus: MilvusSettings | None = None
+    anthropic: AnthropicSettings | None = None
 
 
 """

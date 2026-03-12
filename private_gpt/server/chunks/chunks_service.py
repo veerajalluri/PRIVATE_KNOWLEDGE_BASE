@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Literal
 
 from injector import inject, singleton
-from llama_index.core.indices import VectorStoreIndex
+from llama_index.core.indices import VectorStoreIndex, load_index_from_storage
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.storage import StorageContext
 from pydantic import BaseModel, Field
@@ -100,13 +100,17 @@ class ChunksService:
         limit: int = 10,
         prev_next_chunks: int = 0,
     ) -> list[Chunk]:
-        index = VectorStoreIndex.from_vector_store(
-            self.vector_store_component.vector_store,
-            storage_context=self.storage_context,
-            llm=self.llm_component.llm,
-            embed_model=self.embedding_component.embedding_model,
-            show_progress=True,
-        )
+        try:
+            index = load_index_from_storage(
+                self.storage_context,
+                embed_model=self.embedding_component.embedding_model,
+            )
+        except ValueError:
+            index = VectorStoreIndex(
+                nodes=[],
+                storage_context=self.storage_context,
+                embed_model=self.embedding_component.embedding_model,
+            )
         vector_index_retriever = self.vector_store_component.get_retriever(
             index=index, context_filter=context_filter, similarity_top_k=limit
         )

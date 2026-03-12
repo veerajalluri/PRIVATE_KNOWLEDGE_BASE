@@ -4,6 +4,7 @@ import logging
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from injector import Injector
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.global_handlers import create_global_handler
@@ -53,6 +54,13 @@ def create_app(root_injector: Injector) -> FastAPI:
             allow_methods=settings.server.cors.allow_methods,
             allow_headers=settings.server.cors.allow_headers,
         )
+
+    # Serve local_data/reports/ as static files at /reports/
+    import os
+    from private_gpt.constants import PROJECT_ROOT_PATH
+    reports_dir = os.path.join(PROJECT_ROOT_PATH, "local_data", "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 
     if settings.ui.enabled:
         logger.debug("Importing the UI module")
