@@ -1,5 +1,6 @@
 streamlit
 anthropic
+openai
 chromadb
 python-docx
 python-dotenv

@@ -1,18 +1,18 @@
 """
-RAG Chatbot — Streamlit UI backed by ChromaDB + Claude.
+RAG Chatbot — Streamlit UI backed by ChromaDB + configurable LLM.
+
+Supported LLM providers (select in sidebar):
+  - Claude   (Anthropic)  — requires ANTHROPIC_API_KEY
+  - OpenAI                — requires OPENAI_API_KEY
+  - Ollama   (local)      — requires Ollama running at OLLAMA_BASE_URL
 
 Run:
     streamlit run app.py
-
-Make sure to:
-1. Copy .env.example to .env and set ANTHROPIC_API_KEY
-2. Load documents via load_documents.py or load_confluence.py
 """
 
 import os
 from pathlib import Path
 
-import anthropic
 import chromadb
 import streamlit as st
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
@@ -22,19 +22,99 @@ load_dotenv()
 
 CHROMA_DIR = Path("data/chroma_db")
 COLLECTION_NAME = "knowledge_base"
-CLAUDE_MODEL = "claude-sonnet-4-6"
 TOP_K = 5
-MAX_HISTORY_TURNS = 6  # last N user+assistant pairs sent to Claude
+MAX_HISTORY_TURNS = 6
 
 SYSTEM_PROMPT = """You are a helpful assistant that answers questions based on the provided document context.
 Use the context below to answer the user's question accurately and concisely.
 If the answer is not found in the context, say so clearly — do not make up information."""
 
+# ── LLM defaults ──────────────────────────────────────────────────────────────
+
+LLM_DEFAULTS = {
+    "Claude (Anthropic)": {
+        "models": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5-20251001"],
+        "env_key": "ANTHROPIC_API_KEY",
+    },
+    "OpenAI": {
+        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+        "env_key": "OPENAI_API_KEY",
+    },
+    "Ollama (local)": {
+        "models": ["llama3", "mistral", "gemma3", "phi4", "qwen2.5"],
+        "env_key": None,
+    },
+}
+
+
+# ── LLM callers ───────────────────────────────────────────────────────────────
+
+def ask_claude(messages: list[dict], model: str) -> str:
+    import anthropic
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return "Error: ANTHROPIC_API_KEY not set in .env"
+    client = anthropic.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model=model,
+        max_tokens=1024,
+        system=SYSTEM_PROMPT,
+        messages=messages,
+    )
+    return response.content[0].text
+
+
+def ask_openai(messages: list[dict], model: str) -> str:
+    from openai import OpenAI
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return "Error: OPENAI_API_KEY not set in .env"
+    client = OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model=model,
+        max_tokens=1024,
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
+    )
+    return response.choices[0].message.content
+
+
+def ask_ollama(messages: list[dict], model: str) -> str:
+    import requests
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    payload = {
+        "model": model,
+        "messages": [{"role": "system", "content": SYSTEM_PROMPT}] + messages,
+        "stream": False,
+    }
+    try:
+        resp = requests.post(f"{base_url}/api/chat", json=payload, timeout=120)
+        resp.raise_for_status()
+        return resp.json()["message"]["content"]
+    except requests.exceptions.ConnectionError:
+        return f"Error: Could not connect to Ollama at {base_url}. Is Ollama running?"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+def ask_llm(messages: list[dict], provider: str, model: str) -> str:
+    if provider == "Claude (Anthropic)":
+        return ask_claude(messages, model)
+    elif provider == "OpenAI":
+        return ask_openai(messages, model)
+    elif provider == "Ollama (local)":
+        return ask_ollama(messages, model)
+    return "Error: Unknown provider"
+
+
+# ── ChromaDB ──────────────────────────────────────────────────────────────────
 
 @st.cache_resource
 def get_chroma_collection():
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    return client.get_or_create_collection(name=COLLECTION_NAME, embedding_function=DefaultEmbeddingFunction())
+    return client.get_or_create_collection(
+        name=COLLECTION_NAME,
+        embedding_function=DefaultEmbeddingFunction(),
+    )
 
 
 def retrieve_context(question: str, collection) -> tuple[str, list[str]]:
@@ -46,33 +126,35 @@ def retrieve_context(question: str, collection) -> tuple[str, list[str]]:
 
 
 def build_messages(context: str, history: list[dict], question: str) -> list[dict]:
-    messages = []
-    for turn in history[-(MAX_HISTORY_TURNS * 2):]:
-        messages.append(turn)
-    user_content = f"Context from documents:\n{context}\n\nQuestion: {question}"
-    messages.append({"role": "user", "content": user_content})
+    messages = list(history[-(MAX_HISTORY_TURNS * 2):])
+    messages.append({"role": "user", "content": f"Context from documents:\n{context}\n\nQuestion: {question}"})
     return messages
-
-
-def ask_claude(messages: list[dict]) -> str:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        return "Error: ANTHROPIC_API_KEY not set. Copy .env.example to .env and add your key."
-    client = anthropic.Anthropic(api_key=api_key)
-    response = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=messages,
-    )
-    return response.content[0].text
 
 
 # ── Streamlit UI ───────────────────────────────────────────────────────────────
 
 st.set_page_config(page_title="Knowledge Base Chatbot", page_icon="📚", layout="centered")
 st.title("📚 Knowledge Base Chatbot")
-st.caption("Ask questions about your documents. Powered by Claude + ChromaDB.")
+st.caption("Ask questions about your documents.")
+
+# Sidebar — LLM config
+with st.sidebar:
+    st.header("LLM Settings")
+    provider = st.selectbox("Provider", list(LLM_DEFAULTS.keys()))
+    model = st.selectbox("Model", LLM_DEFAULTS[provider]["models"])
+
+    env_key = LLM_DEFAULTS[provider]["env_key"]
+    if env_key and not os.getenv(env_key):
+        st.warning(f"{env_key} not set in .env")
+
+    if provider == "Ollama (local)":
+        ollama_url = st.text_input("Ollama URL", value=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+        os.environ["OLLAMA_BASE_URL"] = ollama_url
+
+    st.divider()
+    if st.button("Clear conversation"):
+        st.session_state.messages = []
+        st.rerun()
 
 collection = get_chroma_collection()
 
@@ -98,11 +180,11 @@ if prompt := st.chat_input("Ask a question about your documents..."):
         st.markdown(prompt)
 
     context, sources = retrieve_context(prompt, collection)
-    messages_for_claude = build_messages(context, st.session_state.messages, prompt)
+    messages_for_llm = build_messages(context, st.session_state.messages, prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            answer = ask_claude(messages_for_claude)
+        with st.spinner(f"Thinking ({provider} / {model})..."):
+            answer = ask_llm(messages_for_llm, provider, model)
         st.markdown(answer)
 
         if sources:
