@@ -1,6 +1,7 @@
 streamlit
 anthropic
 openai
+google-cloud-aiplatform
 chromadb
 python-docx
 python-dotenv

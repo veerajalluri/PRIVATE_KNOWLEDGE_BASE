@@ -2,9 +2,10 @@
 RAG Chatbot — Streamlit UI backed by ChromaDB + configurable LLM.
 
 Supported LLM providers (select in sidebar):
-  - Claude   (Anthropic)  — requires ANTHROPIC_API_KEY
-  - OpenAI                — requires OPENAI_API_KEY
-  - Ollama   (local)      — requires Ollama running at OLLAMA_BASE_URL
+  - Claude        (Anthropic)   — requires ANTHROPIC_API_KEY
+  - OpenAI                      — requires OPENAI_API_KEY
+  - Gemini        (Vertex AI)   — requires GOOGLE_CLOUD_PROJECT + GCP credentials
+  - Ollama        (local)       — requires Ollama running at OLLAMA_BASE_URL
 
 Run:
     streamlit run app.py
@@ -39,6 +40,10 @@ LLM_DEFAULTS = {
     "OpenAI": {
         "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
         "env_key": "OPENAI_API_KEY",
+    },
+    "Gemini (Vertex AI)": {
+        "models": ["gemini-2.0-flash", "gemini-2.0-pro", "gemini-1.5-flash", "gemini-1.5-pro"],
+        "env_key": "GOOGLE_CLOUD_PROJECT",
     },
     "Ollama (local)": {
         "models": ["llama3", "mistral", "gemma3", "phi4", "qwen2.5"],
@@ -78,6 +83,39 @@ def ask_openai(messages: list[dict], model: str) -> str:
     return response.choices[0].message.content
 
 
+def ask_vertex(messages: list[dict], model: str) -> str:
+    try:
+        import vertexai
+        from vertexai.generative_models import Content, GenerativeModel, Part
+    except ImportError:
+        return "Error: google-cloud-aiplatform not installed. Run: pip install google-cloud-aiplatform"
+
+    project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+    if not project:
+        return "Error: GOOGLE_CLOUD_PROJECT not set in .env"
+    if not creds_path:
+        return "Error: GOOGLE_APPLICATION_CREDENTIALS not set in .env (path to service account JSON)"
+
+    try:
+        vertexai.init(project=project, location=location)
+        gemini = GenerativeModel(model, system_instruction=SYSTEM_PROMPT)
+
+        # Convert messages to Vertex AI Content format
+        history = []
+        for msg in messages[:-1]:
+            role = "user" if msg["role"] == "user" else "model"
+            history.append(Content(role=role, parts=[Part.from_text(msg["content"])]))
+
+        chat = gemini.start_chat(history=history)
+        response = chat.send_message(messages[-1]["content"])
+        return response.text
+    except Exception as e:
+        return f"Error: {e}"
+
+
 def ask_ollama(messages: list[dict], model: str) -> str:
     import requests
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -101,6 +139,8 @@ def ask_llm(messages: list[dict], provider: str, model: str) -> str:
         return ask_claude(messages, model)
     elif provider == "OpenAI":
         return ask_openai(messages, model)
+    elif provider == "Gemini (Vertex AI)":
+        return ask_vertex(messages, model)
     elif provider == "Ollama (local)":
         return ask_ollama(messages, model)
     return "Error: Unknown provider"
@@ -146,6 +186,17 @@ with st.sidebar:
     env_key = LLM_DEFAULTS[provider]["env_key"]
     if env_key and not os.getenv(env_key):
         st.warning(f"{env_key} not set in .env")
+
+    if provider == "Gemini (Vertex AI)":
+        gcp_project = st.text_input("GCP Project ID", value=os.getenv("GOOGLE_CLOUD_PROJECT", ""))
+        gcp_location = st.text_input("GCP Location", value=os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"))
+        creds_path = st.text_input("Service Account JSON path", value=os.getenv("GOOGLE_APPLICATION_CREDENTIALS", ""))
+        if gcp_project:
+            os.environ["GOOGLE_CLOUD_PROJECT"] = gcp_project
+        if gcp_location:
+            os.environ["GOOGLE_CLOUD_LOCATION"] = gcp_location
+        if creds_path:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
 
     if provider == "Ollama (local)":
         ollama_url = st.text_input("Ollama URL", value=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
